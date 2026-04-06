@@ -209,6 +209,9 @@ def CLI():
 
 
 def build():
+    # print(f"Building {buildConfig.gameToBuild.value} with the following configuration:")
+    # print(buildConfig.__dict__)
+    # return
     logger.debug(f"Starting build process for game: {buildConfig.gameToBuild.value}")
 
     logger.info("Cloning repository...")
@@ -309,9 +312,76 @@ def build():
 
 
 def GUI():
-    root = tk.Tk()
-    root.mainloop()
-    root.title("Macos Source Builder")
+
+    # eerst een popup maken om te zeggen dat je de steam beta oude versie moet hebben, anders werkt het niet
+    popup = tk.Tk()
+    popup.title("Warning")
+    label = tk.Label(
+        popup,
+        text="Please make sure you have the older version (via steam) of portal/hl2 else this script wil not work!",
+        font=("Arial", 14),
+        wraplength=400,
+    )
+    label.pack(pady=20, padx=20)
+    button = tk.Button(
+        popup, text="I have the older version, continue", command=popup.destroy
+    )
+    button.pack(pady=10)
+    popup.attributes("-topmost", True)
+    popup.mainloop()
+
+    window = tk.Tk()
+    window.title("Macos Source Builder")
+
+    # Title
+    label = tk.Label(window, text="Macos Source Builder", font=("Arial", 20))
+    label.pack(pady=20, padx=40)
+
+    # Dropdown container
+    dropdownHolder = tk.Frame(window)
+    dropdownHolder.pack(pady=10)
+
+    dropdown_label = tk.Label(dropdownHolder, text="Select the game to build:")
+    dropdown_label.pack(side=tk.LEFT, padx=0)
+
+    game_var = tk.StringVar(window)
+    game_var.set(Game.PORTAL.value)
+    buildConfig.gameToBuild = Game.PORTAL
+
+    dropdown = tk.OptionMenu(
+        dropdownHolder,
+        game_var,
+        *[game.value for game in Game],
+        command=lambda value: setattr(buildConfig, "gameToBuild", Game(value)),
+    )
+    dropdown.pack(side=tk.LEFT, padx=0)
+
+    # hoe heet dit eigelijk? is het een dropdown? een frame? idk
+    def toggle_advanced():
+        if advancedFrame.winfo_ismapped():
+            advancedFrame.pack_forget()
+            toggle_btn.config(text="Show Advanced ▼")
+        else:
+            advancedFrame.pack(pady=10)
+            toggle_btn.config(text="Hide Advanced ▲")
+
+    toggle_btn = tk.Button(window, text="Show Advanced ▼", command=toggle_advanced)
+    toggle_btn.pack(pady=10)
+
+    advancedFrame = tk.Frame(window)
+    # Button container
+    buttonFrame = tk.Frame(window)
+    buttonFrame.pack(pady=20)
+
+    BuildButton = tk.Button(
+        buttonFrame,
+        text="Start Build",
+        command=lambda: [window.destroy(), build()],
+    )
+    BuildButton.pack()
+
+    window.attributes("-topmost", True)
+    window.mainloop()
 
 
 def main():
