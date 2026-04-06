@@ -4,6 +4,8 @@ import argparse
 import sys
 import enum
 import tkinter as tk
+from tkinter import filedialog
+
 
 logger = logging("app.log", LogLevel.DEBUG)
 
@@ -368,7 +370,71 @@ def GUI():
     toggle_btn = tk.Button(window, text="Show Advanced ▼", command=toggle_advanced)
     toggle_btn.pack(pady=10)
 
-    advancedFrame = tk.Frame(window)
+    advancedFrameFrame = tk.Frame(window)
+    advancedFrameFrame.pack()
+    advancedFrame = tk.Frame(advancedFrameFrame)
+
+    # Custom repo URL input
+    customRepoFrame = tk.Frame(advancedFrame)
+    customRepoFrame.pack(pady=5)
+    customRepoLabel = tk.Label(customRepoFrame, text="Custom Repository URL:")
+    customRepoLabel.pack(side=tk.LEFT, padx=0)
+    customRepoInput = tk.Entry(
+        customRepoFrame,
+        width=10,
+    )
+    customRepoInput.insert(0, buildConfig.repoURL)
+    customRepoInput.pack(side=tk.LEFT, padx=0)
+    customRepoInput.bind(
+        "<KeyRelease>",
+        lambda event: setattr(buildConfig, "repoURL", customRepoInput.get()),
+    )
+
+    # custom temp repo dir input
+
+    openDialogbtn = tk.Button(
+        advancedFrame,
+        text="Select Temporary Repository Directory",
+        command=lambda: setattr(buildConfig, "tempRepoDir", filedialog.askdirectory()),
+    )
+    openDialogbtn.pack(pady=1)
+    # dry run checkbox
+
+    dryRunCheckbox = tk.Checkbutton(
+        advancedFrame,
+        text="skip installation to game folder",
+        command=lambda: setattr(buildConfig, "dryRun", not buildConfig.dryRun),
+    )
+    dryRunCheckbox.pack(pady=1)
+
+    # skip build checkbox
+    skipbuildCheckbox = tk.Checkbutton(
+        advancedFrame,
+        text="skip build step",
+        command=lambda: setattr(buildConfig, "skipBuild", not buildConfig.skipBuild),
+    )
+    skipbuildCheckbox.pack(pady=1)
+
+    # skip cleanup checkbox
+    skipCleanupCheckbox = tk.Checkbutton(
+        advancedFrame,
+        text="skip cleanup step",
+        command=lambda: setattr(
+            buildConfig, "skipCleanup", not buildConfig.skipCleanup
+        ),
+    )
+    skipCleanupCheckbox.pack(pady=1)
+
+    # show command output checkbox
+    showCommnadOutputCheckbox = tk.Checkbutton(
+        advancedFrame,
+        text="show command output",
+        command=lambda: setattr(
+            buildConfig, "showCommandOutput", not buildConfig.showCommandOutput
+        ),
+    )
+    showCommnadOutputCheckbox.pack(pady=1)
+
     # Button container
     buttonFrame = tk.Frame(window)
     buttonFrame.pack(pady=20)
