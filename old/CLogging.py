@@ -1,4 +1,5 @@
 from enum import Enum
+import tkinter as tk
 
 
 class LogLevel(Enum):
@@ -16,6 +17,13 @@ class Logger:
     def debug(self, message):
         if self.log_level.value >= LogLevel.DEBUG.value:
             self.log(f"\033[37m[DEBUG] {message}\033[0m")
+
+    def openTkinterLogger(self):
+        self.tkinter_window = tk.Tk()
+        self.tkinter_window.title("Logger")
+        self.tkinter_window.geometry("400x300")
+        self.tkinter_text = tk.Text(self.tkinter_window)
+        self.tkinter_text.pack(expand=True, fill=tk.BOTH)
 
     def warn(self, message):
         if self.log_level.value >= LogLevel.WARNING.value:
@@ -40,6 +48,9 @@ class Logger:
         print(str(message))
         # with open(self.log_file, "a", encoding="utf-8") as f:
         #     f.write(str(message) + "\n")
+        if hasattr(self, "tkinter_text"):
+            self.tkinter_text.insert(tk.END, str(message) + "\n")
+            self.tkinter_text.see(tk.END)
 
 
 class logging(Logger):

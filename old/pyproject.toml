@@ -4,7 +4,4 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = [
-    "argparse>=1.4.0",
-    "sv-ttk>=2.6.1",
-]
+dependencies = ["argparse>=1.4.0"]
