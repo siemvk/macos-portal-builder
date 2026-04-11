@@ -10,11 +10,11 @@ This is a simple CLI tool to build portal and hl2 for macOS.
 
 ### part 1: building the game
 
-https://github.com/user-attachments/assets/2abab421-71f4-4692-bd8a-692067ddc616
-
-https://github.com/supersiem/macos-portal-builder/demo-2.mov
+https://youtu.be/o51p2zmxCSo
 
 ### part 2: running the game
+
+https://youtu.be/TXvaL4L8V6s
 
 ## Why
 
