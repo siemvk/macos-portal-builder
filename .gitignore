@@ -14,3 +14,7 @@ wheels/
 source 
 
 main
+.DS_Store
+
+# local demo assets
+demo-*.mov

@@ -30,6 +30,8 @@ var Config = ConfigType{
 	repoUrl:     "https://github.com/nillerusr/source-engine",
 }
 
+const ARE_WE_BUILDING_TO_A_APP = true
+
 // logging shit
 
 type loggerType struct {
@@ -227,6 +229,14 @@ func main() {
 	Config.GameToBuild = normalizeGameName(*gameBuildInput)
 	Config.tempRepoDir = *tempRepoDirInput
 	Config.showCommandOutput = logLevel >= 3
+
+	if ARE_WE_BUILDING_TO_A_APP {
+		logger.infoMsg("Since you are running this via a app bundle, what game do you want to build? (portal/hl2)")
+		var userInput string
+		fmt.Scanln(&userInput)
+		Config.GameToBuild = normalizeGameName(userInput)
+		logger.infoMsg("Good choice! Building " + Config.GameToBuild + " now!")
+	}
 
 	if !validateGameName(Config.GameToBuild) {
 		logger.errorMsg("Unsupported game: " + *gameBuildInput + ". Supported values are portal and hl2.")
