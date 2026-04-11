@@ -1,10 +1,11 @@
 import os
-from old.CLogging import logging, LogLevel
+from CLogging import logging, LogLevel
 import argparse
 import sys
 import enum
 import tkinter as tk
 from tkinter import filedialog
+
 
 
 logger = logging("app.log", LogLevel.DEBUG)
