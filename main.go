@@ -82,6 +82,8 @@ func execSafe(command string) bool {
 		cmd = exec.Command("bash", "-c", command+">&/dev/null")
 	} else {
 		cmd = exec.Command("bash", "-c", command)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
 	}
 	err := cmd.Run()
 	return err == nil
