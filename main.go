@@ -224,16 +224,41 @@ func checkSteamBetaRequirement(gameName string) bool {
 func build() bool {
 	logger.debugMsg("starting build process for game: " + Config.GameToBuild)
 
-	logger.infoMsg("Cloning the repo....")
-	execSafe("git clone --recursive " + Config.repoUrl + " " + Config.tempRepoDir)
-	logger.successMsg("done cloning repo")
+	// Pre-cleanup in case a previous build was aborted
+	if _, err := os.Stat(Config.tempRepoDir); !os.IsNotExist(err) {
+		logger.infoMsg("cleaning up old temporary repository directory before cloning...")
+		os.RemoveAll(Config.tempRepoDir)
+	}
+
+	logger.infoMsg("checking system requirements...")
+	if _, err := exec.LookPath("git"); err != nil {
+		logger.errorMsg("git is not installed! It is required to download the source engine.")
+		logger.errorMsg("You can install it by running: xcode-select --install")
+		return false
+	}
+	if _, err := exec.LookPath("brew"); err != nil {
+		logger.errorMsg("Homebrew is not installed! It is required to install build dependencies.")
+		logger.errorMsg("Please install Homebrew by running the following command in your terminal:")
+		logger.errorMsg(`/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`)
+		logger.errorMsg("After installing Homebrew, please run this tool again.")
+		return false
+	}
 
 	logger.infoMsg("installing dependencies...")
 	logger.debugMsg("using Homebrew to install dependencies. This may take a while...")
-	execSafe("brew install sdl2 freetype2 fontconfig pkg-config opus jpeg jpeg-turbo libpng libedit")
-	logger.debugMsg("installing Xcode Command Line Tools. This may take a while...")
-	execSafe("xcode-select --install")
+	if !execSafe("brew install python sdl2 python3 freetype2 fontconfig pkg-config opus jpeg jpeg-turbo libpng libedit") {
+		logger.warnMsg("Dependencies installation warning. If the build fails later, this might be why.")
+	}
+	logger.debugMsg("installing Xcode Command Line Tools...")
+	execSafe("xcode-select --install") // Usually fails silently if already installed, which is totally fine
 	logger.successMsg("done installing dependencies!")
+
+	logger.infoMsg("Cloning the repo....")
+	if !execSafe("git clone --recursive " + Config.repoUrl + " " + Config.tempRepoDir) {
+		logger.errorMsg("Failed to clone the repository! Please check your internet connection or git permissions.")
+		return false
+	}
+	logger.successMsg("done cloning repo")
 
 	logger.infoMsg("Configuring build script...")
 
