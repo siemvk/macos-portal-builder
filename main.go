@@ -93,13 +93,13 @@ func shellQuote(input string) string {
 
 func cleanupTempRepo() {
 	if Config.skipCleanup {
-		logger.warnMsg("Skipping cleanup!")
+		logger.warnMsg("skipping cleanup!")
 		return
 	}
 
-	logger.infoMsg("Cleaning up temporary repository directory...")
+	logger.infoMsg("cleaning up temporary repository directory...")
 	if err := os.RemoveAll(Config.tempRepoDir); err != nil {
-		logger.errorMsg("Failed to clean up temporary repository directory: " + err.Error())
+		logger.errorMsg("failed to clean up temporary repository directory: " + err.Error())
 		return
 	}
 	logger.successMsg("done cleaning up temporary repository directory!")
