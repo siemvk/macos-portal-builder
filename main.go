@@ -250,10 +250,10 @@ func build() bool {
 		logger.warnMsg("Dependencies installation warning. If the build fails later, this might be why.")
 	}
 	logger.debugMsg("installing Xcode Command Line Tools...")
-	execSafe("xcode-select --install") // Usually fails silently if already installed, which is totally fine
+	execSafe("xcode-select --install") // fails silently if already installed which is fine
 	logger.successMsg("done installing dependencies!")
 
-	logger.infoMsg("Cloning the repo....")
+	logger.infoMsg("cloning the repo....")
 	if !execSafe("git clone --recursive " + Config.repoUrl + " " + Config.tempRepoDir) {
 		logger.errorMsg("Failed to clone the repository! Please check your internet connection or git permissions.")
 		return false
@@ -283,17 +283,17 @@ func build() bool {
 	}
 	logger.successMsg("done configuring build script!")
 
-	logger.infoMsg("Building the game.... This may take a while...")
+	logger.infoMsg("building the game.... this may take a while...")
 	if !Config.skipBuild {
 		execSafe("cd " + Config.tempRepoDir + " && python3 waf build")
 		logger.successMsg("done building the game!")
 	} else {
-		logger.warnMsg("Skipping build process!")
+		logger.warnMsg("skipping build process!")
 	}
 
-	logger.infoMsg("Installing the game to a temp directory...")
+	logger.infoMsg("installing the game to a temp directory...")
 	if !execSafe("cd " + Config.tempRepoDir + " && python3 waf install --destdir=" + shellQuote(Config.tempRepoDir+"/installingthismf")) {
-		logger.errorMsg("Failed to install build artifacts to temporary directory")
+		logger.errorMsg("failed to install build artifacts to temporary directory")
 		cleanupTempRepo()
 		return false
 	}
@@ -301,20 +301,20 @@ func build() bool {
 	logger.successMsg("done installing the game!")
 
 	if Config.dryRun {
-		logger.warnMsg("Dry run enabled, skipping installation to game folder.")
+		logger.warnMsg("dry run enabled, skipping installation to game folder.")
 		cleanupTempRepo()
 		return true
 	}
 
 	gameDir := gameNameToDir(Config.GameToBuild)
 	if err := os.MkdirAll(gameDir, 0755); err != nil {
-		logger.errorMsg("Failed to create game directory: " + err.Error())
+		logger.errorMsg("failed to create game directory: " + err.Error())
 		cleanupTempRepo()
 		return false
 	}
 
 	logger.infoMsg("copying files to the game folder...")
-	logger.debugMsg("Copying files from " + Config.tempRepoDir + "/installingthismf to " + gameDir)
+	logger.debugMsg("copying files from " + Config.tempRepoDir + "/installingthismf to " + gameDir)
 	copyCmd := "cd " + shellQuote(gameDir) +
 		" && rm -rf ./portal/bin ./bin" +
 		" && cp -r " + shellQuote(Config.tempRepoDir+"/installingthismf/portal/bin") + " ./portal/bin" +
@@ -323,7 +323,7 @@ func build() bool {
 		" && mv " + shellQuote(Config.tempRepoDir+"/installingthismf/hl2_launcher") + " ./hl2_osx"
 
 	if !execSafe(copyCmd) {
-		logger.errorMsg("Failed while copying files into game directory")
+		logger.errorMsg("failed while copying files into game directory")
 		cleanupTempRepo()
 		return false
 	}
@@ -365,7 +365,7 @@ func main() {
 	}
 
 	if !validateGameName(Config.GameToBuild) {
-		logger.errorMsg("Unsupported game: " + *gameBuildInput + ". Supported values are portal and hl2.")
+		logger.errorMsg("Unsupported game: " + *gameBuildInput + ". Supported values are portal (not portal 2) and hl2 (half life 2).")
 		os.Exit(1)
 	}
 
@@ -424,19 +424,19 @@ func selfDelete() {
 			cmd := exec.Command("rm", "-rf", dir)
 			err = cmd.Start()
 			if err != nil {
-				logger.errorMsg("Failed to start deletion command: " + err.Error())
+				logger.errorMsg("failed to start deletion command: " + err.Error())
 			}
 			return
 		}
 	}
 
 	// fallback
-	logger.infoMsg("Deleting executable: " + executable)
+	logger.infoMsg("deleting executable: " + executable)
 	err = os.Remove(executable)
 	if err != nil {
-		logger.errorMsg("Failed to delete executable: " + err.Error())
+		logger.errorMsg("failed to delete executable: " + err.Error())
 		// fallback to rm just in case
 		exec.Command("rm", executable).Start()
 	}
-	logger.successMsg("cleanup initiated. Goodbye and thanks for using my tool!")
+	logger.successMsg("Cleanup initiated. Goodbye and thanks for using my tool!")
 }
