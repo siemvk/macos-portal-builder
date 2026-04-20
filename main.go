@@ -331,7 +331,11 @@ func build() bool {
 
 	logger.infoMsg("Building the game.... this may take a while...")
 	if !Config.skipBuild {
-		execSafe("cd " + Config.tempRepoDir + " && python3 waf build")
+		if !execSafe("cd " + Config.tempRepoDir + " && python3 waf build") {
+			logger.errorMsg("Failed to build the game! Please run with --log-level 3 to see the compile errors.")
+			cleanupTempRepo()
+			return false
+		}
 		logger.successMsg("Done building the game!")
 	} else {
 		logger.warnMsg("Skipping build process!")
@@ -362,10 +366,10 @@ func build() bool {
 	logger.infoMsg("Copying files to the game folder...")
 	logger.debugMsg("Copying files from " + Config.tempRepoDir + "/installingthismf to " + gameDir)
 	copyCmd := "cd " + shellQuote(gameDir) +
-		" && rm -rf ./portal/bin ./bin" +
-		" && cp -r " + shellQuote(Config.tempRepoDir+"/installingthismf/portal/bin") + " ./portal/bin" +
+		" && rm -rf ./" + Config.GameToBuild + "/bin ./bin" +
+		" && cp -r " + shellQuote(Config.tempRepoDir+"/installingthismf/"+Config.GameToBuild+"/bin") + " ./" + Config.GameToBuild + "/bin" +
 		" && cp -r " + shellQuote(Config.tempRepoDir+"/installingthismf/bin") + " ./bin" +
-		" && mv ./hl2_osx ./hl2_osx_backup" +
+		" && (mv ./hl2_osx ./hl2_osx_backup || true)" +
 		" && mv " + shellQuote(Config.tempRepoDir+"/installingthismf/hl2_launcher") + " ./hl2_osx"
 
 	if !execSafe(copyCmd) {
