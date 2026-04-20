@@ -163,7 +163,7 @@ func gameNameToDir(gameName string) string {
 		return filepath.Join(libPath, "steamapps", "common", folderName)
 	}
 
-	// Fallback to default
+	// fallback to default
 	homeDir := os.ExpandEnv("$HOME")
 	return filepath.Join(homeDir, "Library", "Application Support", "Steam", "steamapps", "common", folderName)
 }
@@ -193,15 +193,15 @@ func checkSteamBetaRequirement(gameName string) bool {
 
 	libPath := getGameLibraryPath(appId)
 	if libPath == "" {
-		logger.errorMsg("Could not find Steam appmanifest for the game.")
-		logger.errorMsg("Make sure the game is installed via Steam and located in a valid Steam library.")
+		logger.errorMsg("could not find Steam appmanifest for the game.")
+		logger.errorMsg("make sure the game is installed via Steam and located in a valid Steam library. pirated copies of the game are not supported")
 		return false
 	}
 
 	manifestPath := filepath.Join(libPath, "steamapps", fmt.Sprintf("appmanifest_%s.acf", appId))
 	content, err := os.ReadFile(manifestPath)
 	if err != nil {
-		logger.errorMsg("Could not read Steam appmanifest for the game.")
+		logger.errorMsg("could not read Steam appmanifest for the game.")
 		return false
 	}
 
@@ -211,13 +211,13 @@ func checkSteamBetaRequirement(gameName string) bool {
 	matched, _ := regexp.MatchString(`"betakey"\s+"public"`, contentStr)
 
 	if !hasBetaKey || matched {
-		logger.errorMsg("You are currently on the 'public' main branch of the game!")
-		logger.errorMsg("MAKE SURE TO INSTALL THE STEAM BETA OR LEGACY VERSION OF THE GAME!!!")
-		logger.errorMsg("Please go to Steam -> Right click the game -> Properties -> Betas -> Select the beta or legacy branch.")
+		logger.errorMsg("you are currently on the 'public' main branch of the game!")
+		logger.errorMsg("you have to have the steam beta or legacy version of the game!")
+		logger.errorMsg("please go to Steam -> right click the game -> Properties -> Betas -> select the beta or legacy branch.")
 		return false
 	}
 
-	logger.successMsg("Beta/Legacy branch check passed!")
+	logger.successMsg("beta/Legacy check passed")
 	return true
 }
 
@@ -226,12 +226,12 @@ func build() bool {
 
 	logger.infoMsg("Cloning the repo....")
 	execSafe("git clone --recursive " + Config.repoUrl + " " + Config.tempRepoDir)
-	logger.successMsg("Done cloning repo")
+	logger.successMsg("done cloning repo")
 
-	logger.infoMsg("Installing dependencies...")
-	logger.debugMsg("Using Homebrew to install dependencies. This may take a while...")
+	logger.infoMsg("installing dependencies...")
+	logger.debugMsg("using Homebrew to install dependencies. This may take a while...")
 	execSafe("brew install sdl2 freetype2 fontconfig pkg-config opus jpeg jpeg-turbo libpng libedit")
-	logger.debugMsg("Installing Xcode Command Line Tools. This may take a while...")
+	logger.debugMsg("installing Xcode Command Line Tools. This may take a while...")
 	execSafe("xcode-select --install")
 	logger.successMsg("done installing dependencies!")
 
@@ -248,7 +248,7 @@ func build() bool {
 				logger.errorMsg("Install failed again!!!! Okay so what if the first fix broke the second fix so lets try the second fix without the first fix.")
 				try4 := execSafe("cd " + Config.tempRepoDir + " && arch -arm64 python3 waf configure -T release --prefix='' --build-games=" + Config.GameToBuild)
 				if !try4 {
-					logger.errorMsg("Install failed again!!!!! I give up. Please open an issue with the log output so I can try to fix this.")
+					logger.errorMsg("Install failed again!!!!! I give up. Please open an issue with the log output and device specs so I can try to fix this.")
 					cleanupTempRepo()
 					logger.errorMsg("Open a issue!!!!")
 					return false
@@ -363,8 +363,8 @@ func main() {
 	success := build()
 
 	if success && !Config.dryRun {
-		logger.infoMsg("The game has been successfully built and installed!")
-		logger.infoMsg("Would you like to delete this builder tool now? (y/n)")
+		logger.infoMsg("game has been successfully built and installed (i hope, go test it ig)!")
+		logger.infoMsg("would you like to delete this builder tool now? (if it works just do yes it takes up space) (y/n)")
 		var deleteChoice string
 		fmt.Scanln(&deleteChoice)
 		deleteChoice = strings.ToLower(strings.TrimSpace(deleteChoice))
@@ -377,15 +377,11 @@ func main() {
 func selfDelete() {
 	executable, err := os.Executable()
 	if err != nil {
-		logger.errorMsg("Failed to get executable path: " + err.Error())
+		logger.errorMsg("failed to get executable path: " + err.Error())
 		return
 	}
 
-	// If we are in an app bundle, we might want to delete the whole .app
-	// Path is typically .../Contents/MacOS/binary
-	// We use filepath.Dir to go up from binary -> MacOS -> Contents -> .app
 	if strings.Contains(executable, ".app/Contents/MacOS/") {
-		// Better way to find the .app bundle root:
 		dir := executable
 		for {
 			if strings.HasSuffix(dir, ".app") {
@@ -409,14 +405,13 @@ func selfDelete() {
 		}
 	}
 
-	// Fallback or non-app binary
+	// fallback
 	logger.infoMsg("Deleting executable: " + executable)
-	// On Unix we can just remove it
 	err = os.Remove(executable)
 	if err != nil {
 		logger.errorMsg("Failed to delete executable: " + err.Error())
-		// Fallback to rm just in case
+		// fallback to rm just in case
 		exec.Command("rm", executable).Start()
 	}
-	logger.successMsg("Cleanup initiated. Goodbye!")
+	logger.successMsg("cleanup initiated. Goodbye and thanks for using my tool!")
 }
