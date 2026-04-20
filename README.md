@@ -19,13 +19,14 @@ This is a simple CLI tool to build portal and hl2 for macOS.
 4. launch the game from steam and enjoy!
 
 ## Manual
+
 1. download the steam beta or legacy version of the game you want to build
 2. download the app from the releases tab, unzip and run it.
 3. enter the name of the game you want to build (portal or hl2)
 4. wait
 5. delete the app because you don't need it anymore and it takes up space
 6. launch the game from steam and enjoy!
-   
+
 ## Demo
 
 ### part 1: building the game
