@@ -6,15 +6,29 @@ This is a simple CLI tool to build portal and hl2 for macOS.
 
 **TO USE THIS SOFTWARE YOU MUST HAVE A LEGAL COPY OF THE GAME YOU WANT TO BUILD. PLEASE DO NOT ASK ME FOR HELP IF YOU DO NOT HAVE A LEGAL COPY OF THE GAME.**
 
+## Installer (Recommended)
+
+1. open your terminal and run:
+
+   ```bash
+   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/SSoggyTacoMan/macos-portal-builder/main/install.sh)"
+   ```
+
+2. enter the name of the game you want to build (portal or hl2)
+3. wait
+4. launch the game from steam and enjoy!
+
+## Manual
+
 ## demo
 
 ### part 1: building the game
 
-https://youtu.be/o51p2zmxCSo
+<https://youtu.be/o51p2zmxCSo>
 
 ### part 2: running the game
 
-https://youtu.be/TXvaL4L8V6s
+<https://youtu.be/TXvaL4L8V6s>
 
 ## Why
 
@@ -37,16 +51,16 @@ Yes! On my m1 macbook air 2020 8gb ram it run at 300 fps on portal and I don't h
 
 This is only a UI built on top of the wonderful work of the people who have fixed the source engine to run on modern macOS versions. You can find their work here:
 
-https://github.com/nillerusr/source-engine
+<https://github.com/nillerusr/source-engine>
 
 And the guide I used to build the game is here:
 
-https://jxhug.notion.site/Guide-to-Installing-Portal-Using-Source-Engine-on-macOS-660803f9ced149cfa1647d38fd5a7092
+<https://jxhug.notion.site/Guide-to-Installing-Portal-Using-Source-Engine-on-macOS-660803f9ced149cfa1647d38fd5a7092>
 
-## ai usage
+## AI usage
 
-Ai was my Go emotional support line. This is because I am a complete beginner at Go.
+AI was my Go emotional support line. This is because I am a complete beginner at Go.
 
 ## Whats up with the scrapped GUI?
 
-The GUI was scrapped because I don't know how to make a GUI in Go and the CLI was easier to make. 
+The GUI was scrapped because I don't know how to make a GUI in Go and the CLI was easier to make.

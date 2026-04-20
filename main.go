@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 )
 
@@ -104,12 +105,67 @@ func cleanupTempRepo() {
 	logger.successMsg("done cleaning up temporary repository directory!")
 }
 
-func gameNameToDir(gameName string) string {
+func findSteamLibraries() []string {
 	homeDir := os.ExpandEnv("$HOME")
-	if strings.EqualFold(gameName, "hl2") {
-		return homeDir + "/Library/Application Support/Steam/steamapps/common/Half-Life 2"
+	defaultSteamPath := filepath.Join(homeDir, "Library", "Application Support", "Steam")
+	libraries := []string{defaultSteamPath}
+
+	vdfPath := filepath.Join(defaultSteamPath, "steamapps", "libraryfolders.vdf")
+	content, err := os.ReadFile(vdfPath)
+	if err == nil {
+		re := regexp.MustCompile(`(?i)"path"\s+"([^"]+)"`)
+		matches := re.FindAllStringSubmatch(string(content), -1)
+		for _, match := range matches {
+			if len(match) == 2 {
+				path := match[1]
+				found := false
+				for _, l := range libraries {
+					if l == path {
+						found = true
+						break
+					}
+				}
+				if !found {
+					libraries = append(libraries, path)
+				}
+			}
+		}
 	}
-	return homeDir + "/Library/Application Support/Steam/steamapps/common/Portal"
+	return libraries
+}
+
+func getGameLibraryPath(appId string) string {
+	libraries := findSteamLibraries()
+	for _, lib := range libraries {
+		manifestPath := filepath.Join(lib, "steamapps", fmt.Sprintf("appmanifest_%s.acf", appId))
+		if _, err := os.Stat(manifestPath); err == nil {
+			return lib // found the library where this game is installed
+		}
+	}
+	return ""
+}
+
+func gameNameToDir(gameName string) string {
+	var appId string
+	var folderName string
+	if normalizeGameName(gameName) == "portal" {
+		appId = "400"
+		folderName = "Portal"
+	} else if normalizeGameName(gameName) == "hl2" {
+		appId = "220"
+		folderName = "Half-Life 2"
+	} else {
+		return ""
+	}
+
+	libPath := getGameLibraryPath(appId)
+	if libPath != "" {
+		return filepath.Join(libPath, "steamapps", "common", folderName)
+	}
+
+	// Fallback to default
+	homeDir := os.ExpandEnv("$HOME")
+	return filepath.Join(homeDir, "Library", "Application Support", "Steam", "steamapps", "common", folderName)
 }
 
 func normalizeGameName(gameName string) string {
@@ -123,6 +179,46 @@ func validateGameName(gameName string) bool {
 	default:
 		return false
 	}
+}
+
+func checkSteamBetaRequirement(gameName string) bool {
+	var appId string
+	if normalizeGameName(gameName) == "portal" {
+		appId = "400"
+	} else if normalizeGameName(gameName) == "hl2" {
+		appId = "220"
+	} else {
+		return true
+	}
+
+	libPath := getGameLibraryPath(appId)
+	if libPath == "" {
+		logger.errorMsg("Could not find Steam appmanifest for the game.")
+		logger.errorMsg("Make sure the game is installed via Steam and located in a valid Steam library.")
+		return false
+	}
+
+	manifestPath := filepath.Join(libPath, "steamapps", fmt.Sprintf("appmanifest_%s.acf", appId))
+	content, err := os.ReadFile(manifestPath)
+	if err != nil {
+		logger.errorMsg("Could not read Steam appmanifest for the game.")
+		return false
+	}
+
+	contentStr := strings.ToLower(string(content))
+	hasBetaKey := strings.Contains(contentStr, "betakey")
+	
+	matched, _ := regexp.MatchString(`"betakey"\s+"public"`, contentStr)
+
+	if !hasBetaKey || matched {
+		logger.errorMsg("You are currently on the 'public' main branch of the game!")
+		logger.errorMsg("MAKE SURE TO INSTALL THE STEAM BETA OR LEGACY VERSION OF THE GAME!!!")
+		logger.errorMsg("Please go to Steam -> Right click the game -> Properties -> Betas -> Select the beta or legacy branch.")
+		return false
+	}
+
+	logger.successMsg("Beta/Legacy branch check passed!")
+	return true
 }
 
 func build() bool {
@@ -258,6 +354,10 @@ func main() {
 
 		Config.skipCleanup = true
 
+	}
+
+	if !checkSteamBetaRequirement(Config.GameToBuild) {
+		os.Exit(1)
 	}
 
 	success := build()
