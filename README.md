@@ -19,8 +19,14 @@ This is a simple CLI tool to build portal and hl2 for macOS.
 4. launch the game from steam and enjoy!
 
 ## Manual
-
-## demo
+1. download the steam beta or legacy version of the game you want to build
+2. download the app from the releases tab, unzip and run it.
+3. enter the name of the game you want to build (portal or hl2)
+4. wait
+5. delete the app because you don't need it anymore and it takes up space
+6. launch the game from steam and enjoy!
+   
+## Demo
 
 ### part 1: building the game
 
@@ -33,15 +39,6 @@ This is a simple CLI tool to build portal and hl2 for macOS.
 ## Why
 
 Valve has not updated the official versions of hl2 or portal to run on 64 bit macOS versions. But they did make the source engine source available and others have fixed it to run on modern macOS versions! But the process of building the game was annoying and the guide was not very clear. So I made this tool to make it easier for people to build the games because I really like these games and I want to be able to play them on my mac without having to use a old mac or a virtual machine. This was made even worse by the fact that steam dropped support for the last macos version that could run 32 bit apps, so now you have to use a windows or linux machine to play the game or build it yourself. I hope this tool will make it easier for people to play these games on their macs and maybe even get more people to play these games!
-
-## How to use
-
-1. download the steam beta or legacy version of the game you want to build
-2. download the app from the releases tab, unzip and run it.
-3. enter the name of the game you want to build (portal or hl2)
-4. wait
-5. delete the app because you don't need it anymore and it takes up space
-6. launch the game from steam and enjoy!
 
 ## does it run any good?
 
