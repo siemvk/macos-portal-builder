@@ -231,20 +231,46 @@ func build() bool {
 	}
 
 	logger.infoMsg("checking system requirements...")
-	if err := exec.Command("xcode-select", "-p").Run(); err != nil {
-		logger.errorMsg("Xcode Command Line Tools are not installed!")
+	xcodeOut, err := exec.Command("xcode-select", "-p").Output()
+	hasXcode := false
+	if err == nil {
+		xcodePath := strings.TrimSpace(string(xcodeOut))
+		// Verify the path exists AND contains the compiler to avoid 'stale path' false positives
+		clangPath := filepath.Join(xcodePath, "usr", "bin", "clang")
+		if _, statErr := os.Stat(clangPath); statErr == nil {
+			hasXcode = true
+		}
+	}
+
+	if !hasXcode {
+		logger.errorMsg("Xcode Command Line Tools are missing or broken!")
 		logger.errorMsg("They are required to compile the game and provide 'git'.")
 		logger.errorMsg("Please run this command in your terminal:")
 		logger.errorMsg("  xcode-select --install")
 		logger.errorMsg("A window will pop up. Follow the prompts to install, wait for it to finish completely, and then run this builder tool again.")
 		return false
 	}
-	if _, err := exec.LookPath("brew"); err != nil {
+
+	brewPath, err := exec.LookPath("brew")
+	if err != nil {
+		// fallback for if users just installed it but haven't restarted their terminal
+		// and intel path and apple silicon path
+		if _, err2 := os.Stat("/opt/homebrew/bin/brew"); err2 == nil {
+			brewPath = "/opt/homebrew/bin/brew"
+		} else if _, err3 := os.Stat("/usr/local/bin/brew"); err3 == nil {
+			brewPath = "/usr/local/bin/brew"
+		}
+	}
+
+	if brewPath == "" {
 		logger.errorMsg("Homebrew is not installed! It is required to install build dependencies.")
 		logger.errorMsg("Please install Homebrew by running the following command in your terminal:")
 		logger.errorMsg(`/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`)
-		logger.errorMsg("After installing Homebrew, please run this tool again.")
+		logger.errorMsg("After installing Homebrew, please restart your terminal and run this tool again.")
 		return false
+	} else if err != nil {
+		// Brew was found via fallback. Inject it directly into the PATH for this session!
+		os.Setenv("PATH", filepath.Dir(brewPath)+":"+os.Getenv("PATH"))
 	}
 
 	logger.infoMsg("installing dependencies...")
