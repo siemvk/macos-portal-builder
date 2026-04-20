@@ -5,12 +5,12 @@
 
 set -euo pipefail
 
-# Repository information
+# repo info
 REPO="SSoggyTacoMan/macos-portal-builder"
 INSTALL_DIR="$HOME/.macos-source-builder"
 BINARY_NAME="source-game-builder-tool"
 
-# Colors for output
+# colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
@@ -18,13 +18,13 @@ NC='\033[0m' # No Color
 
 printf "${BLUE}==>${NC} macOS Source Builder Installer\n"
 
-# Check if running on macOS
+# check if running on macOS (for the people that somehow manage to think this will work on windows or linux?)
 if [[ "$OSTYPE" != "darwin"* ]]; then
     printf "${RED}Error:${NC} This tool is only for macOS.\n"
     exit 1
 fi
 
-# Create install directory
+# create install directory
 mkdir -p "$INSTALL_DIR"
 
 printf "${BLUE}==>${NC} Fetching latest release information...\n"
@@ -38,8 +38,6 @@ fi
 
 printf "${BLUE}==>${NC} Found version: ${GREEN}$TAG${NC}\n"
 
-# In a real scenario, you'd have specific binaries for arm64 and amd64, or a universal one.
-# For now, let's assume there's a zip containing the app bundle as per README.
 ASSET_NAME="Source-game-builder-tool-macos.zip"
 
 DOWNLOAD_URL="https://github.com/$REPO/releases/download/$TAG/$ASSET_NAME"
@@ -50,14 +48,13 @@ curl -fsSL "$DOWNLOAD_URL" -o "$INSTALL_DIR/$ASSET_NAME"
 printf "${BLUE}==>${NC} Unzipping...\n"
 unzip -q -o "$INSTALL_DIR/$ASSET_NAME" -d "$INSTALL_DIR"
 
-# Clean up zip
+# clean up zip
 rm "$INSTALL_DIR/$ASSET_NAME"
 
-# Path to the binary inside the app bundle
+# path to the binary inside the app bundle
 BINARY_PATH="$INSTALL_DIR/Source-game-builder-tool-macos.app/Contents/MacOS/source-game-builder-tool"
 
 if [ ! -f "$BINARY_PATH" ]; then
-    # Maybe it was just a raw binary?
     BINARY_PATH="$INSTALL_DIR/source-game-builder-tool"
 fi
 
@@ -66,15 +63,10 @@ if [ -f "$BINARY_PATH" ]; then
     printf "${GREEN}==>${NC} Successfully installed to $INSTALL_DIR\n"
     printf "${BLUE}==>${NC} Starting the builder...\n\n"
 
-    # Run the binary
+    # run binary
     "$BINARY_PATH" "$@"
 
-    # After the tool runs, it might have deleted itself (if it was the binary).
-    # However, since it's in an app bundle inside $INSTALL_DIR, let's see if it's still there.
-
     if [ -d "$INSTALL_DIR" ]; then
-        # If the app bundle is gone, let's remove the whole install dir if it's empty
-        # or just notify the user.
         if [ ! -f "$BINARY_PATH" ]; then
             rm -rf "$INSTALL_DIR"
             printf "\n${GREEN}==>${NC} Cleanup complete. Tool and temporary files removed.\n"
