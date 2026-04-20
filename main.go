@@ -93,16 +93,16 @@ func shellQuote(input string) string {
 
 func cleanupTempRepo() {
 	if Config.skipCleanup {
-		logger.warnMsg("skipping cleanup!")
+		logger.warnMsg("Skipping cleanup!")
 		return
 	}
 
-	logger.infoMsg("cleaning up temporary repository directory...")
+	logger.infoMsg("Cleaning up temporary repository directory...")
 	if err := os.RemoveAll(Config.tempRepoDir); err != nil {
-		logger.errorMsg("failed to clean up temporary repository directory: " + err.Error())
+		logger.errorMsg("Failed to clean up temporary repository directory: " + err.Error())
 		return
 	}
-	logger.successMsg("done cleaning up temporary repository directory!")
+	logger.successMsg("Done cleaning up temporary repository directory!")
 }
 
 func findSteamLibraries() []string {
@@ -193,15 +193,15 @@ func checkSteamBetaRequirement(gameName string) bool {
 
 	libPath := getGameLibraryPath(appId)
 	if libPath == "" {
-		logger.errorMsg("could not find Steam appmanifest for the game.")
-		logger.errorMsg("make sure the game is installed via Steam and located in a valid Steam library. pirated copies of the game are not supported")
+		logger.errorMsg("Could not find Steam appmanifest for the game.")
+		logger.errorMsg("Make sure the game is installed via Steam and located in a valid Steam library. Pirated copies of the game are not supported")
 		return false
 	}
 
 	manifestPath := filepath.Join(libPath, "steamapps", fmt.Sprintf("appmanifest_%s.acf", appId))
 	content, err := os.ReadFile(manifestPath)
 	if err != nil {
-		logger.errorMsg("could not read Steam appmanifest for the game.")
+		logger.errorMsg("Could not read Steam appmanifest for the game.")
 		return false
 	}
 
@@ -222,34 +222,34 @@ func checkSteamBetaRequirement(gameName string) bool {
 	}
 
 	if !isValid {
-		logger.errorMsg("you are on the wrong branch of the game!")
+		logger.errorMsg("You are on the wrong branch of the game!")
 		if appId == "220" {
-			logger.errorMsg("for Half-Life 2, you MUST install the 'steam_legacy - Pre-20th Anniversary Build'!")
-			logger.errorMsg("please go to Steam -> right click the game -> Properties -> Betas -> select 'steam_legacy'.")
+			logger.errorMsg("For Half-Life 2, you MUST install the 'steam_legacy - Pre-20th Anniversary Build'!")
+			logger.errorMsg("Please go to Steam -> right click the game -> Properties -> Betas -> select 'steam_legacy'.")
 		} else if appId == "400" {
-			logger.errorMsg("for Portal, you MUST install the 'beta - SteamPipe Beta'!")
-			logger.errorMsg("please go to Steam -> right click the game -> Properties -> Betas -> select 'beta'.")
+			logger.errorMsg("For Portal, you MUST install the 'beta - SteamPipe Beta'!")
+			logger.errorMsg("Please go to Steam -> right click the game -> Properties -> Betas -> select 'beta'.")
 		} else {
-			logger.errorMsg("you have to have the steam beta or legacy version of the game!")
-			logger.errorMsg("please go to Steam -> right click the game -> Properties -> Betas -> select the beta or legacy branch.")
+			logger.errorMsg("You have to have the steam beta or legacy version of the game!")
+			logger.errorMsg("Please go to Steam -> right click the game -> Properties -> Betas -> select the beta or legacy branch.")
 		}
 		return false
 	}
 
-	logger.successMsg("beta/Legacy check passed")
+	logger.successMsg("Beta/Legacy check passed")
 	return true
 }
 
 func build() bool {
-	logger.debugMsg("starting build process for game: " + Config.GameToBuild)
+	logger.debugMsg("Starting build process for game: " + Config.GameToBuild)
 
 	// Pre-cleanup in case a previous build was aborted
 	if _, err := os.Stat(Config.tempRepoDir); !os.IsNotExist(err) {
-		logger.infoMsg("cleaning up old temporary repository directory before cloning...")
+		logger.infoMsg("Cleaning up old temporary repository directory before cloning...")
 		os.RemoveAll(Config.tempRepoDir)
 	}
 
-	logger.infoMsg("checking system requirements...")
+	logger.infoMsg("Checking system requirements...")
 	xcodeOut, err := exec.Command("xcode-select", "-p").Output()
 	hasXcode := false
 	if err == nil {
@@ -292,19 +292,19 @@ func build() bool {
 		os.Setenv("PATH", filepath.Dir(brewPath)+":"+os.Getenv("PATH"))
 	}
 
-	logger.infoMsg("installing dependencies...")
-	logger.debugMsg("using Homebrew to install dependencies. This may take a while...")
+	logger.infoMsg("Installing dependencies...")
+	logger.debugMsg("Using Homebrew to install dependencies. This may take a while...")
 	if !execSafe("brew install python sdl2 python3 freetype2 fontconfig pkg-config opus jpeg jpeg-turbo libpng libedit") {
 		logger.warnMsg("Dependencies installation warning. If the build fails later, this might be why.")
 	}
-	logger.successMsg("done installing dependencies!")
+	logger.successMsg("Done installing dependencies!")
 
-	logger.infoMsg("cloning the repo....")
+	logger.infoMsg("Cloning the repo....")
 	if !execSafe("git clone --recursive " + Config.repoUrl + " " + Config.tempRepoDir) {
 		logger.errorMsg("Failed to clone the repository! Please check your internet connection or git permissions.")
 		return false
 	}
-	logger.successMsg("done cloning repo")
+	logger.successMsg("Done cloning repo")
 
 	logger.infoMsg("Configuring build script...")
 
@@ -327,40 +327,40 @@ func build() bool {
 			}
 		}
 	}
-	logger.successMsg("done configuring build script!")
+	logger.successMsg("Done configuring build script!")
 
-	logger.infoMsg("building the game.... this may take a while...")
+	logger.infoMsg("Building the game.... this may take a while...")
 	if !Config.skipBuild {
 		execSafe("cd " + Config.tempRepoDir + " && python3 waf build")
-		logger.successMsg("done building the game!")
+		logger.successMsg("Done building the game!")
 	} else {
-		logger.warnMsg("skipping build process!")
+		logger.warnMsg("Skipping build process!")
 	}
 
-	logger.infoMsg("installing the game to a temp directory...")
+	logger.infoMsg("Installing the game to a temp directory...")
 	if !execSafe("cd " + Config.tempRepoDir + " && python3 waf install --destdir=" + shellQuote(Config.tempRepoDir+"/installingthismf")) {
-		logger.errorMsg("failed to install build artifacts to temporary directory")
+		logger.errorMsg("Failed to install build artifacts to temporary directory")
 		cleanupTempRepo()
 		return false
 	}
 
-	logger.successMsg("done installing the game!")
+	logger.successMsg("Done installing the game!")
 
 	if Config.dryRun {
-		logger.warnMsg("dry run enabled, skipping installation to game folder.")
+		logger.warnMsg("Dry run enabled, skipping installation to game folder.")
 		cleanupTempRepo()
 		return true
 	}
 
 	gameDir := gameNameToDir(Config.GameToBuild)
 	if err := os.MkdirAll(gameDir, 0755); err != nil {
-		logger.errorMsg("failed to create game directory: " + err.Error())
+		logger.errorMsg("Failed to create game directory: " + err.Error())
 		cleanupTempRepo()
 		return false
 	}
 
-	logger.infoMsg("copying files to the game folder...")
-	logger.debugMsg("copying files from " + Config.tempRepoDir + "/installingthismf to " + gameDir)
+	logger.infoMsg("Copying files to the game folder...")
+	logger.debugMsg("Copying files from " + Config.tempRepoDir + "/installingthismf to " + gameDir)
 	copyCmd := "cd " + shellQuote(gameDir) +
 		" && rm -rf ./portal/bin ./bin" +
 		" && cp -r " + shellQuote(Config.tempRepoDir+"/installingthismf/portal/bin") + " ./portal/bin" +
@@ -369,12 +369,12 @@ func build() bool {
 		" && mv " + shellQuote(Config.tempRepoDir+"/installingthismf/hl2_launcher") + " ./hl2_osx"
 
 	if !execSafe(copyCmd) {
-		logger.errorMsg("failed while copying files into game directory")
+		logger.errorMsg("Failed while copying files into game directory")
 		cleanupTempRepo()
 		return false
 	}
 
-	logger.successMsg("done copying files to the game folder!")
+	logger.successMsg("Done copying files to the game folder!")
 	cleanupTempRepo()
 	return true
 }
@@ -417,11 +417,11 @@ func main() {
 
 	if *testStuff {
 		logLevel = 3
-		logger.debugMsg("debug")
-		logger.infoMsg("info")
-		logger.warnMsg("warn")
-		logger.successMsg("success")
-		logger.errorMsg("error D:")
+		logger.debugMsg("Debug")
+		logger.infoMsg("Info")
+		logger.warnMsg("Warn")
+		logger.successMsg("Success")
+		logger.errorMsg("Error D:")
 
 		Config.skipCleanup = true
 
@@ -434,8 +434,8 @@ func main() {
 	success := build()
 
 	if success && !Config.dryRun {
-		logger.infoMsg("game has been successfully built and installed (i hope, go test it ig)!")
-		logger.infoMsg("would you like to delete this builder tool now? (if it works just do yes it takes up space) (y/n)")
+		logger.infoMsg("Game has been successfully built and installed (I hope, go test it ig)!")
+		logger.infoMsg("Would you like to delete this builder tool now? (If it works just do yes it takes up space) (y/n)")
 		var deleteChoice string
 		fmt.Scanln(&deleteChoice)
 		deleteChoice = strings.ToLower(strings.TrimSpace(deleteChoice))
@@ -448,7 +448,7 @@ func main() {
 func selfDelete() {
 	executable, err := os.Executable()
 	if err != nil {
-		logger.errorMsg("failed to get executable path: " + err.Error())
+		logger.errorMsg("Failed to get executable path: " + err.Error())
 		return
 	}
 
@@ -470,17 +470,17 @@ func selfDelete() {
 			cmd := exec.Command("rm", "-rf", dir)
 			err = cmd.Start()
 			if err != nil {
-				logger.errorMsg("failed to start deletion command: " + err.Error())
+				logger.errorMsg("Failed to start deletion command: " + err.Error())
 			}
 			return
 		}
 	}
 
 	// fallback
-	logger.infoMsg("deleting executable: " + executable)
+	logger.infoMsg("Deleting executable: " + executable)
 	err = os.Remove(executable)
 	if err != nil {
-		logger.errorMsg("failed to delete executable: " + err.Error())
+		logger.errorMsg("Failed to delete executable: " + err.Error())
 		// fallback to rm just in case
 		exec.Command("rm", executable).Start()
 	}
