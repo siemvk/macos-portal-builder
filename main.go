@@ -269,7 +269,7 @@ func build() bool {
 		logger.errorMsg("After installing Homebrew, please restart your terminal and run this tool again.")
 		return false
 	} else if err != nil {
-		// Brew was found via fallback. Inject it directly into the PATH for this session!
+		// brew found via fallbacks o inject it into PATH for the session (why did they not restart the terminal grrr)
 		os.Setenv("PATH", filepath.Dir(brewPath)+":"+os.Getenv("PATH"))
 	}
 
