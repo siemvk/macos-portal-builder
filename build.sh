@@ -9,6 +9,9 @@ GOOS=darwin GOARCH=arm64 go build -o myapp_arm
 # Create universal binary
 lipo -create -output myapp myapp_intel myapp_arm
 
+# Create directory structure
+mkdir -p dist/Source-game-builder-tool-macos.app/Contents/MacOS/
+
 # Remove old binary from app bundle
 rm -f dist/Source-game-builder-tool-macos.app/Contents/MacOS/source-game-builder-tool
 

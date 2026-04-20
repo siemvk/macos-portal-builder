@@ -207,13 +207,32 @@ func checkSteamBetaRequirement(gameName string) bool {
 
 	contentStr := strings.ToLower(string(content))
 	hasBetaKey := strings.Contains(contentStr, "betakey")
+	isPublic, _ := regexp.MatchString(`"betakey"\s+"public"`, contentStr)
 	
-	matched, _ := regexp.MatchString(`"betakey"\s+"public"`, contentStr)
+	isValid := false
 
-	if !hasBetaKey || matched {
-		logger.errorMsg("you are currently on the 'public' main branch of the game!")
-		logger.errorMsg("you have to have the steam beta or legacy version of the game!")
-		logger.errorMsg("please go to Steam -> right click the game -> Properties -> Betas -> select the beta or legacy branch.")
+	if appId == "220" {
+		isSteamLegacy, _ := regexp.MatchString(`"betakey"\s+"steam_legacy"`, contentStr)
+		isValid = isSteamLegacy
+	} else if appId == "400" {
+		isBeta, _ := regexp.MatchString(`"betakey"\s+"beta"`, contentStr)
+		isValid = isBeta
+	} else {
+		isValid = (hasBetaKey && !isPublic)
+	}
+
+	if !isValid {
+		logger.errorMsg("you are on the wrong branch of the game!")
+		if appId == "220" {
+			logger.errorMsg("for Half-Life 2, you MUST install the 'steam_legacy - Pre-20th Anniversary Build'!")
+			logger.errorMsg("please go to Steam -> right click the game -> Properties -> Betas -> select 'steam_legacy'.")
+		} else if appId == "400" {
+			logger.errorMsg("for Portal, you MUST install the 'beta - SteamPipe Beta'!")
+			logger.errorMsg("please go to Steam -> right click the game -> Properties -> Betas -> select 'beta'.")
+		} else {
+			logger.errorMsg("you have to have the steam beta or legacy version of the game!")
+			logger.errorMsg("please go to Steam -> right click the game -> Properties -> Betas -> select the beta or legacy branch.")
+		}
 		return false
 	}
 
