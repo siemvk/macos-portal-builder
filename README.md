@@ -6,7 +6,7 @@ This is a simple CLI tool to build portal and hl2 for macOS.
 
 **TO USE THIS SOFTWARE YOU MUST HAVE A LEGAL COPY OF THE GAME YOU WANT TO BUILD. PLEASE DO NOT ASK ME FOR HELP IF YOU DO NOT HAVE A LEGAL COPY OF THE GAME.**
 
-## video of it in action
+## demo
 
 ### part 1: building the game
 
