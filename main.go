@@ -310,16 +310,16 @@ func build() bool {
 
 	logger.infoMsg("Configuring build script...")
 
-	try1 := execSafe("cd " + Config.tempRepoDir + " && python3 waf configure -T release --prefix='' --build-games=" + Config.GameToBuild)
+	try1 := execSafe("cd " + Config.tempRepoDir + " && export CXXFLAGS=\"-include alloca.h\" && python3 waf configure -T release --prefix='' --build-games=" + Config.GameToBuild)
 	if !try1 {
 		logger.errorMsg("Basic install failed! This is not uncommon, trying again with different clang")
-		try2 := execSafe("cd " + Config.tempRepoDir + " && export CC=/usr/bin/clang && export CXX=/usr/bin/clang++ && python3 waf configure -T release --prefix='' --build-games=" + Config.GameToBuild)
+		try2 := execSafe("cd " + Config.tempRepoDir + " && export CC=/usr/bin/clang && export CXX=/usr/bin/clang++ && export CXXFLAGS=\"-include alloca.h\" && python3 waf configure -T release --prefix='' --build-games=" + Config.GameToBuild)
 		if !try2 {
 			logger.errorMsg("Install failed again! I do not experience this on my machine, so I am doing random fixes from reddit now.")
-			try3 := execSafe("cd " + Config.tempRepoDir + " && export CC=/usr/bin/clang && export CXX=/usr/bin/clang++ && arch -arm64 python3 waf configure -T release --prefix='' --build-games=" + Config.GameToBuild)
+			try3 := execSafe("cd " + Config.tempRepoDir + " && export CC=/usr/bin/clang && export CXX=/usr/bin/clang++ && export CXXFLAGS=\"-include alloca.h\" && arch -arm64 python3 waf configure -T release --prefix='' --build-games=" + Config.GameToBuild)
 			if !try3 {
 				logger.errorMsg("Install failed again!!!! Okay so what if the first fix broke the second fix so lets try the second fix without the first fix.")
-				try4 := execSafe("cd " + Config.tempRepoDir + " && arch -arm64 python3 waf configure -T release --prefix='' --build-games=" + Config.GameToBuild)
+				try4 := execSafe("cd " + Config.tempRepoDir + " && export CXXFLAGS=\"-include alloca.h\" && arch -arm64 python3 waf configure -T release --prefix='' --build-games=" + Config.GameToBuild)
 				if !try4 {
 					logger.errorMsg("Install failed again!!!!! I give up. Please open an issue with the log output and device specs so I can try to fix this.")
 					cleanupTempRepo()
