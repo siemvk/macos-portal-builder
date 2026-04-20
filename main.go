@@ -231,9 +231,12 @@ func build() bool {
 	}
 
 	logger.infoMsg("checking system requirements...")
-	if _, err := exec.LookPath("git"); err != nil {
-		logger.errorMsg("git is not installed! It is required to download the source engine.")
-		logger.errorMsg("You can install it by running: xcode-select --install")
+	if err := exec.Command("xcode-select", "-p").Run(); err != nil {
+		logger.errorMsg("Xcode Command Line Tools are not installed!")
+		logger.errorMsg("They are required to compile the game and provide 'git'.")
+		logger.errorMsg("Please run this command in your terminal:")
+		logger.errorMsg("  xcode-select --install")
+		logger.errorMsg("A window will pop up. Follow the prompts to install, wait for it to finish completely, and then run this builder tool again.")
 		return false
 	}
 	if _, err := exec.LookPath("brew"); err != nil {
@@ -249,8 +252,6 @@ func build() bool {
 	if !execSafe("brew install python sdl2 python3 freetype2 fontconfig pkg-config opus jpeg jpeg-turbo libpng libedit") {
 		logger.warnMsg("Dependencies installation warning. If the build fails later, this might be why.")
 	}
-	logger.debugMsg("installing Xcode Command Line Tools...")
-	execSafe("xcode-select --install") // fails silently if already installed which is fine
 	logger.successMsg("done installing dependencies!")
 
 	logger.infoMsg("cloning the repo....")
