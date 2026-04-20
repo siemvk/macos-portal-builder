@@ -37,3 +37,39 @@ if [ -z "$TAG" ]; then
 fi
 
 printf "${BLUE}==>${NC} Found version: ${GREEN}$TAG${NC}\n"
+ARCH=$(uname -m)
+if [ "$ARCH" = "arm64" ]; then
+    # In a real scenario, you'd have specific binaries for arm64 and amd64, or a universal one.
+    # For now, let's assume there's a zip containing the app bundle as per README.
+    ASSET_NAME="Source-game-builder-tool-macos.zip"
+else
+    ASSET_NAME="Source-game-builder-tool-macos.zip"
+fi
+
+DOWNLOAD_URL="https://github.com/$REPO/releases/download/$TAG/$ASSET_NAME"
+
+printf "${BLUE}==>${NC} Downloading $ASSET_NAME...\n"
+curl -L "$DOWNLOAD_URL" -o "$INSTALL_DIR/$ASSET_NAME"
+
+printf "${BLUE}==>${NC} Unzipping...\n"
+unzip -q -o "$INSTALL_DIR/$ASSET_NAME" -d "$INSTALL_DIR"
+
+# Path to the binary inside the app bundle
+BINARY_PATH="$INSTALL_DIR/Source-game-builder-tool-macos.app/Contents/MacOS/source-game-builder-tool"
+
+if [ ! -f "$BINARY_PATH" ]; then
+    # Maybe it was just a raw binary?
+    BINARY_PATH="$INSTALL_DIR/source-game-builder-tool"
+fi
+
+if [ -f "$BINARY_PATH" ]; then
+    chmod +x "$BINARY_PATH"
+    printf "${GREEN}==>${NC} Successfully installed to $INSTALL_DIR\n"
+    printf "${BLUE}==>${NC} Starting the builder...\n\n"
+
+    # Run the binary
+    "$BINARY_PATH" "$@"
+else
+    printf "${RED}Error:${NC} Could not find the executable binary in the downloaded package.\n"
+    exit 1
+fi
