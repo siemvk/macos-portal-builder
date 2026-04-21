@@ -196,7 +196,7 @@ func checkSteamBetaRequirement(gameName string) bool {
 	libPath := getGameLibraryPath(appId)
 	if libPath == "" {
 		logger.errorMsg("Could not find Steam appmanifest for the game.")
-		logger.errorMsg("Make sure the game is installed via Steam and located in a valid Steam library. Pirated copies of the game are not supported")
+		logger.errorMsg("Make sure the game is installed via Steam and located in a valid Steam library. Pirated copies of the game are not supported!")
 		return false
 	}
 
@@ -210,7 +210,7 @@ func checkSteamBetaRequirement(gameName string) bool {
 	contentStr := strings.ToLower(string(content))
 	hasBetaKey := strings.Contains(contentStr, "betakey")
 	isPublic, _ := regexp.MatchString(`"betakey"\s+"public"`, contentStr)
-	
+
 	isValid := false
 
 	switch appId {
@@ -246,8 +246,6 @@ func checkSteamBetaRequirement(gameName string) bool {
 
 func build() bool {
 	logger.debugMsg("Starting build process for game: " + Config.GameToBuild)
-
-	// Pre-cleanup in case a previous build was aborted
 	if _, err := os.Stat(Config.tempRepoDir); !os.IsNotExist(err) {
 		logger.infoMsg("Cleaning up old temporary repository directory before cloning...")
 		os.RemoveAll(Config.tempRepoDir)
@@ -258,7 +256,6 @@ func build() bool {
 	hasXcode := false
 	if err == nil {
 		xcodePath := strings.TrimSpace(string(xcodeOut))
-		// Verify the path exists AND contains the compiler to avoid 'stale path' false positives
 		clangPath := filepath.Join(xcodePath, "usr", "bin", "clang")
 		if _, statErr := os.Stat(clangPath); statErr == nil {
 			hasXcode = true
