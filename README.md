@@ -43,7 +43,7 @@ Valve has not updated the official versions of hl2 or portal to run on 64 bit ma
 
 ## does it run any good?
 
-Yes! On my m1 macbook air 2020 8gb ram it run at 300 fps on portal and I don't have any performance issues. I haven't tested hl2 yet but I expect it to run a bit worse.
+Yes! On my m1 macbook air 2020 8gb ram it runs at 300 fps on portal and I don't have any performance issues. Half Life 2 also runs at about 300 fps on m2 macbook air 2022 16gb ram (depends on how much other stuff you have open), with max settings, again no issues, quality could be turned down for more stability if needed.
 
 ## credits
 
