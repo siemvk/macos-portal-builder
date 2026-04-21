@@ -404,7 +404,6 @@ func main() {
 	Config.tempRepoDir = *tempRepoDirInput
 	Config.showCommandOutput = logLevel >= 3
 
-	// If game is not provided via flags and we are in app mode (or just want interactive), ask for it
 	if Config.GameToBuild == "" {
 		logger.infoMsg("What game do you want to build? (portal/hl2)")
 		var userInput string
