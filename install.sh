@@ -6,7 +6,7 @@
 set -euo pipefail
 
 # repo info
-REPO="SSoggyTacoMan/macos-portal-builder"
+REPO="siemvk/macos-portal-builder"
 INSTALL_DIR="$HOME/.macos-source-builder"
 BINARY_NAME="source-game-builder-tool"
 

@@ -11,7 +11,7 @@ This is a simple CLI tool to build portal and hl2 for macOS.
 1. open your terminal and run:
 
    ```bash
-   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/SSoggyTacoMan/macos-portal-builder/main/install.sh)"
+   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/siemvk/macos-portal-builder/main/install.sh)"
    ```
 
 2. enter the name of the game you want to build (portal or hl2)
