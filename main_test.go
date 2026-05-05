@@ -89,13 +89,28 @@ func TestValidateGameName(t *testing.T) {
 			expected: true,
 		},
 		{
+			name:     "valid hl2 uppercase",
+			input:    "HL2",
+			expected: true,
+		},
+		{
 			name:     "valid hl2 with spaces",
 			input:    "  hl2  ",
 			expected: true,
 		},
 		{
+			name:     "valid portal with tabs and newlines",
+			input:    "\tportal\n",
+			expected: true,
+		},
+		{
 			name:     "invalid game",
 			input:    "tf2",
+			expected: false,
+		},
+		{
+			name:     "invalid csgo",
+			input:    "csgo",
 			expected: false,
 		},
 		{
