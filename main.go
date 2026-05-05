@@ -33,6 +33,13 @@ var Config = ConfigType{
 	repoUrl:     "https://github.com/nillerusr/source-engine",
 }
 
+var (
+	cachedSteamLibraries []string
+	steamLibrariesOnce   sync.Once
+)
+
+var libraryPathRegex = regexp.MustCompile(`(?i)"path"\s+"([^"]+)"`)
+
 // logging shit
 
 type loggerType struct {
@@ -120,11 +127,6 @@ func cleanupTempRepo() {
 	logger.successMsg("Done cleaning up temporary repository directory!")
 }
 
-var (
-	cachedSteamLibraries []string
-	steamLibrariesOnce   sync.Once
-)
-
 func findSteamLibraries() []string {
 	steamLibrariesOnce.Do(func() {
 		homeDir := os.ExpandEnv("$HOME")
@@ -134,8 +136,7 @@ func findSteamLibraries() []string {
 		vdfPath := filepath.Join(defaultSteamPath, "steamapps", "libraryfolders.vdf")
 		content, err := os.ReadFile(vdfPath)
 		if err == nil {
-			pathRegex := regexp.MustCompile(`(?i)"path"\s+"([^"]+)"`)
-			matches := pathRegex.FindAllStringSubmatch(string(content), -1)
+			matches := libraryPathRegex.FindAllStringSubmatch(string(content), -1)
 
 			seen := make(map[string]bool, len(matches)+len(libraries))
 			for _, l := range libraries {
