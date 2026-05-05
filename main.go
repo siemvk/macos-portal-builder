@@ -32,8 +32,6 @@ var Config = ConfigType{
 	repoUrl:     "https://github.com/nillerusr/source-engine",
 }
 
-var ARE_WE_BUILDING_TO_A_APP = true
-
 // logging shit
 
 type loggerType struct {
