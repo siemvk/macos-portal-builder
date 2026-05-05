@@ -32,6 +32,13 @@ var Config = ConfigType{
 	repoUrl:     "https://github.com/nillerusr/source-engine",
 }
 
+var (
+	reBetaKeyPublic      = regexp.MustCompile(`"betakey"\s+"public"`)
+	reBetaKeySteamLegacy = regexp.MustCompile(`"betakey"\s+"steam_legacy"`)
+	reBetaKeyBeta        = regexp.MustCompile(`"betakey"\s+"beta"`)
+	reLibraryPath        = regexp.MustCompile(`(?i)"path"\s+"([^"]+)"`)
+)
+
 // logging shit
 
 type loggerType struct {
@@ -113,8 +120,7 @@ func findSteamLibraries() []string {
 	vdfPath := filepath.Join(defaultSteamPath, "steamapps", "libraryfolders.vdf")
 	content, err := os.ReadFile(vdfPath)
 	if err == nil {
-		re := regexp.MustCompile(`(?i)"path"\s+"([^"]+)"`)
-		matches := re.FindAllStringSubmatch(string(content), -1)
+		matches := reLibraryPath.FindAllStringSubmatch(string(content), -1)
 
 		seen := make(map[string]bool, len(matches)+len(libraries))
 		for _, l := range libraries {
@@ -208,17 +214,15 @@ func checkSteamBetaRequirement(gameName string) bool {
 
 	contentStr := strings.ToLower(string(content))
 	hasBetaKey := strings.Contains(contentStr, "betakey")
-	isPublic, _ := regexp.MatchString(`"betakey"\s+"public"`, contentStr)
+	isPublic := reBetaKeyPublic.MatchString(contentStr)
 
 	isValid := false
 
 	switch appId {
 	case "220":
-		isSteamLegacy, _ := regexp.MatchString(`"betakey"\s+"steam_legacy"`, contentStr)
-		isValid = isSteamLegacy
+		isValid = reBetaKeySteamLegacy.MatchString(contentStr)
 	case "400":
-		isBeta, _ := regexp.MatchString(`"betakey"\s+"beta"`, contentStr)
-		isValid = isBeta
+		isValid = reBetaKeyBeta.MatchString(contentStr)
 	default:
 		isValid = (hasBetaKey && !isPublic)
 	}
