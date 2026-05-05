@@ -434,18 +434,6 @@ func main() {
 	Config.GameToBuild = normalizeGameName(*gameBuildInput)
 	Config.showCommandOutput = logLevel >= 3
 
-	if err := os.MkdirAll(*tempRepoDirInput, 0755); err != nil {
-		logger.errorMsg("Failed to create temporary repository base directory: " + err.Error())
-		os.Exit(1)
-	}
-
-	tempDir, err := os.MkdirTemp(*tempRepoDirInput, "source-engine-*")
-	if err != nil {
-		logger.errorMsg("Failed to create secure temporary repository directory: " + err.Error())
-		os.Exit(1)
-	}
-	Config.tempRepoDir = tempDir
-
 	if Config.GameToBuild == "" {
 		logger.infoMsg("What game do you want to build? (portal/hl2)")
 		var userInput string
@@ -476,6 +464,18 @@ func main() {
 	if !checkSteamBetaRequirement(Config.GameToBuild) {
 		os.Exit(1)
 	}
+
+	if err := os.MkdirAll(*tempRepoDirInput, 0755); err != nil {
+		logger.errorMsg("Failed to create temporary repository base directory: " + err.Error())
+		os.Exit(1)
+	}
+
+	tempDir, err := os.MkdirTemp(*tempRepoDirInput, "source-engine-*")
+	if err != nil {
+		logger.errorMsg("Failed to create secure temporary repository directory: " + err.Error())
+		os.Exit(1)
+	}
+	Config.tempRepoDir = tempDir
 
 	success := build()
 
