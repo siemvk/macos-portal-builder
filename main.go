@@ -408,6 +408,7 @@ func copyFilesToGameFolder() bool {
 
 func build() bool {
 	logger.debugMsg("Starting build process for game: " + Config.GameToBuild)
+	defer cleanupTempRepo()
 	return prepareTempRepoDir() &&
 		checkXcode() &&
 		checkHomebrew() &&
