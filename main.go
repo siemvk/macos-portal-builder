@@ -243,13 +243,15 @@ func checkSteamBetaRequirement(gameName string) bool {
 	return true
 }
 
-func build() bool {
-	logger.debugMsg("Starting build process for game: " + Config.GameToBuild)
+func prepareTempRepoDir() bool {
 	if _, err := os.Stat(Config.tempRepoDir); !os.IsNotExist(err) {
 		logger.infoMsg("Cleaning up old temporary repository directory before cloning...")
 		os.RemoveAll(Config.tempRepoDir)
 	}
+	return true
+}
 
+func checkXcode() bool {
 	logger.infoMsg("Checking system requirements...")
 	xcodeOut, err := exec.Command("xcode-select", "-p").Output()
 	hasXcode := false
@@ -269,7 +271,10 @@ func build() bool {
 		logger.errorMsg("A window will pop up. Follow the prompts to install, wait for it to finish completely, and then run this builder tool again.")
 		return false
 	}
+	return true
+}
 
+func checkHomebrew() bool {
 	brewPath, err := exec.LookPath("brew")
 	if err != nil {
 		// fallback for if users just installed it but haven't restarted their terminal
@@ -291,21 +296,30 @@ func build() bool {
 		// brew found via fallbacks o inject it into PATH for the session (why did they not restart the terminal grrr)
 		os.Setenv("PATH", filepath.Dir(brewPath)+":"+os.Getenv("PATH"))
 	}
+	return true
+}
 
+func installDependencies() bool {
 	logger.infoMsg("Installing dependencies...")
 	logger.debugMsg("Using Homebrew to install dependencies. This may take a while...")
 	if !execSafe("brew install python sdl2 python3 freetype2 fontconfig pkg-config opus jpeg jpeg-turbo libpng libedit") {
 		logger.warnMsg("Dependencies installation warning. If the build fails later, this might be why.")
 	}
 	logger.successMsg("Done installing dependencies!")
+	return true
+}
 
+func cloneRepository() bool {
 	logger.infoMsg("Cloning the repo....")
 	if !execSafe("git clone --recursive " + Config.repoUrl + " " + Config.tempRepoDir) {
 		logger.errorMsg("Failed to clone the repository! Please check your internet connection or git permissions.")
 		return false
 	}
 	logger.successMsg("Done cloning repo")
+	return true
+}
 
+func configureBuild() bool {
 	logger.infoMsg("Configuring build script...")
 
 	try1 := execSafe("cd " + Config.tempRepoDir + " && export CXXFLAGS=\"-include alloca.h\" && python3 waf configure -T release --prefix='' --build-games=" + Config.GameToBuild)
@@ -328,7 +342,10 @@ func build() bool {
 		}
 	}
 	logger.successMsg("Done configuring build script!")
+	return true
+}
 
+func buildGame() bool {
 	logger.infoMsg("Building the game.... this may take a while...")
 	if !Config.skipBuild {
 		if !execSafe("cd " + Config.tempRepoDir + " && python3 waf build") {
@@ -340,7 +357,10 @@ func build() bool {
 	} else {
 		logger.warnMsg("Skipping build process!")
 	}
+	return true
+}
 
+func installGameToTemp() bool {
 	logger.infoMsg("Installing the game to a temp directory...")
 	if !execSafe("cd " + Config.tempRepoDir + " && python3 waf install --destdir=" + shellQuote(Config.tempRepoDir+"/installingthismf")) {
 		logger.errorMsg("Failed to install build artifacts to temporary directory")
@@ -349,7 +369,10 @@ func build() bool {
 	}
 
 	logger.successMsg("Done installing the game!")
+	return true
+}
 
+func copyFilesToGameFolder() bool {
 	if Config.dryRun {
 		logger.warnMsg("Dry run enabled, skipping installation to game folder.")
 		cleanupTempRepo()
@@ -381,6 +404,19 @@ func build() bool {
 	logger.successMsg("Done copying files to the game folder!")
 	cleanupTempRepo()
 	return true
+}
+
+func build() bool {
+	logger.debugMsg("Starting build process for game: " + Config.GameToBuild)
+	return prepareTempRepoDir() &&
+		checkXcode() &&
+		checkHomebrew() &&
+		installDependencies() &&
+		cloneRepository() &&
+		configureBuild() &&
+		buildGame() &&
+		installGameToTemp() &&
+		copyFilesToGameFolder()
 }
 
 func main() {
