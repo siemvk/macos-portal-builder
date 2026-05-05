@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sync"
 )
 
 type ConfigType struct {
@@ -105,34 +106,45 @@ func cleanupTempRepo() {
 	logger.successMsg("Done cleaning up temporary repository directory!")
 }
 
+var (
+	cachedSteamLibraries []string
+	steamLibrariesOnce   sync.Once
+)
+
 func findSteamLibraries() []string {
-	homeDir := os.ExpandEnv("$HOME")
-	defaultSteamPath := filepath.Join(homeDir, "Library", "Application Support", "Steam")
-	libraries := []string{defaultSteamPath}
+	steamLibrariesOnce.Do(func() {
+		homeDir := os.ExpandEnv("$HOME")
+		defaultSteamPath := filepath.Join(homeDir, "Library", "Application Support", "Steam")
+		libraries := []string{defaultSteamPath}
 
-	vdfPath := filepath.Join(defaultSteamPath, "steamapps", "libraryfolders.vdf")
-	content, err := os.ReadFile(vdfPath)
-	if err == nil {
-		re := regexp.MustCompile(`(?i)"path"\s+"([^"]+)"`)
-		matches := re.FindAllStringSubmatch(string(content), -1)
+		vdfPath := filepath.Join(defaultSteamPath, "steamapps", "libraryfolders.vdf")
+		content, err := os.ReadFile(vdfPath)
+		if err == nil {
+			re := regexp.MustCompile(`(?i)"path"\s+"([^"]+)"`)
+			matches := re.FindAllStringSubmatch(string(content), -1)
 
-		seen := make(map[string]bool, len(matches)+len(libraries))
-		for _, l := range libraries {
-			seen[l] = true
-		}
+			seen := make(map[string]bool, len(matches)+len(libraries))
+			for _, l := range libraries {
+				seen[l] = true
+			}
 
-		for _, match := range matches {
-			if len(match) == 2 {
-				path := match[1]
-				path = filepath.Clean(path)
-				if !seen[path] {
-					seen[path] = true
-					libraries = append(libraries, path)
+			for _, match := range matches {
+				if len(match) == 2 {
+					path := match[1]
+					path = filepath.Clean(path)
+					if !seen[path] {
+						seen[path] = true
+						libraries = append(libraries, path)
+					}
 				}
 			}
 		}
-	}
-	return libraries
+		cachedSteamLibraries = libraries
+	})
+
+	result := make([]string, len(cachedSteamLibraries))
+	copy(result, cachedSteamLibraries)
+	return result
 }
 
 func getGameLibraryPath(appId string) string {
