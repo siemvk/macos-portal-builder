@@ -271,10 +271,6 @@ func checkSteamBetaRequirement(gameName string) bool {
 
 func build() bool {
 	logger.debugMsg("Starting build process for game: " + Config.GameToBuild)
-	if _, err := os.Stat(Config.tempRepoDir); !os.IsNotExist(err) {
-		logger.infoMsg("Cleaning up old temporary repository directory before cloning...")
-		os.RemoveAll(Config.tempRepoDir)
-	}
 
 	logger.infoMsg("Checking system requirements...")
 	xcodeOut, err := exec.Command("xcode-select", "-p").Output()
@@ -436,8 +432,19 @@ func main() {
 	Config.skipCleanup = *skipCleanupInput
 	Config.skipBuild = *skipBuildInput
 	Config.GameToBuild = normalizeGameName(*gameBuildInput)
-	Config.tempRepoDir = *tempRepoDirInput
 	Config.showCommandOutput = logLevel >= 3
+
+	if err := os.MkdirAll(*tempRepoDirInput, 0755); err != nil {
+		logger.errorMsg("Failed to create temporary repository base directory: " + err.Error())
+		os.Exit(1)
+	}
+
+	tempDir, err := os.MkdirTemp(*tempRepoDirInput, "source-engine-*")
+	if err != nil {
+		logger.errorMsg("Failed to create secure temporary repository directory: " + err.Error())
+		os.Exit(1)
+	}
+	Config.tempRepoDir = tempDir
 
 	if Config.GameToBuild == "" {
 		logger.infoMsg("What game do you want to build? (portal/hl2)")
