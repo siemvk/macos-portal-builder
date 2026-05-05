@@ -20,7 +20,7 @@ func TestFindSteamLibraries(t *testing.T) {
 	vdfPath := filepath.Join(steamPath, "libraryfolders.vdf")
 	content := []byte(`"libraryfolders" {`)
 	for i := 0; i < 100; i++ {
-		content = append(content, []byte(`\n"path" "/path/to/steam/loop"`)...)
+		content = append(content, []byte("\n\"path\" \"/path/to/steam/loop\"")...)
 	}
 	content = append(content, []byte(`}`)...)
 
