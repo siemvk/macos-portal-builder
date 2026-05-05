@@ -51,12 +51,10 @@ printf "${BLUE}==>${NC} Downloading checksum...\n"
 if curl -fsSL "$CHECKSUM_URL" -o "$INSTALL_DIR/$CHECKSUM_NAME"; then
     printf "${BLUE}==>${NC} Verifying checksum...\n"
     # Navigate to INSTALL_DIR so shasum can find the file by its relative name
-    cd "$INSTALL_DIR" || exit 1
-    if ! shasum -a 256 -c "$CHECKSUM_NAME"; then
+    if ! (cd "$INSTALL_DIR" && shasum -a 256 -c "$CHECKSUM_NAME"); then
         printf "${RED}Error:${NC} Checksum verification failed. The downloaded file might be corrupted or compromised.\n"
         exit 1
     fi
-    cd - > /dev/null || exit 1
 else
     printf "${RED}Error:${NC} Could not download checksum file. Cannot verify the integrity of the downloaded package.\n"
     exit 1
