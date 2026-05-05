@@ -30,7 +30,7 @@ jobs:
       - name: Package and Checksum
         run: |
           cd dist
-          zip -r ../Source-game-builder-tool-macos.zip Source-game-builder-tool-macos.app
+          ditto -c -k --sequesterRsrc --keepParent Source-game-builder-tool-macos.app ../Source-game-builder-tool-macos.zip
           cd ..
           shasum -a 256 Source-game-builder-tool-macos.zip > Source-game-builder-tool-macos.zip.sha256
 
