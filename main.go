@@ -311,7 +311,7 @@ func installDependencies() bool {
 
 func cloneRepository() bool {
 	logger.infoMsg("Cloning the repo....")
-	if !execSafe("git clone --recursive " + Config.repoUrl + " " + Config.tempRepoDir) {
+	if !execSafe("git clone --recursive " + shellQuote(Config.repoUrl) + " " + shellQuote(Config.tempRepoDir)) {
 		logger.errorMsg("Failed to clone the repository! Please check your internet connection or git permissions.")
 		return false
 	}
