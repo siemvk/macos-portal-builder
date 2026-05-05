@@ -38,11 +38,7 @@ func TestFindSteamLibraries(t *testing.T) {
 func BenchmarkFindSteamLibraries(b *testing.B) {
 	tempDir := b.TempDir()
 
-	// Save old HOME and restore it later
-	oldHome := os.Getenv("HOME")
-	defer os.Setenv("HOME", oldHome)
-
-	os.Setenv("HOME", tempDir)
+	b.Setenv("HOME", tempDir)
 
 	steamPath := filepath.Join(tempDir, "Library", "Application Support", "Steam", "steamapps")
 	err := os.MkdirAll(steamPath, 0755)
