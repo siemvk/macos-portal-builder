@@ -4,53 +4,6 @@ import (
 	"testing"
 )
 
-func TestShellQuote(t *testing.T) {
-	tests := []struct {
-		name     string
-		input    string
-		expected string
-	}{
-		{
-			name:     "empty string",
-			input:    "",
-			expected: "''",
-		},
-		{
-			name:     "simple string",
-			input:    "hello",
-			expected: "'hello'",
-		},
-		{
-			name:     "string with spaces",
-			input:    "hello world",
-			expected: "'hello world'",
-		},
-		{
-			name:     "string with single quotes",
-			input:    "it's a test",
-			expected: "'it'\\''s a test'",
-		},
-		{
-			name:     "string with multiple single quotes",
-			input:    "''",
-			expected: "''\\'''\\'''",
-		},
-		{
-			name:     "string with double quotes",
-			input:    `"hello"`,
-			expected: `'"hello"'`,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			// shellQuote function was removed from main.go
-			// Skipping this test until it's officially removed
-			t.Skip("shellQuote is undefined")
-		})
-	}
-}
-
 func TestNormalizeGameName(t *testing.T) {
 	tests := []struct {
 		name     string
