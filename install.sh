@@ -39,11 +39,28 @@ fi
 printf "${BLUE}==>${NC} Found version: ${GREEN}$TAG${NC}\n"
 
 ASSET_NAME="Source-game-builder-tool-macos.zip"
+CHECKSUM_NAME="${ASSET_NAME}.sha256"
 
 DOWNLOAD_URL="https://github.com/$REPO/releases/download/$TAG/$ASSET_NAME"
+CHECKSUM_URL="https://github.com/$REPO/releases/download/$TAG/$CHECKSUM_NAME"
 
 printf "${BLUE}==>${NC} Downloading $ASSET_NAME...\n"
 curl -fsSL "$DOWNLOAD_URL" -o "$INSTALL_DIR/$ASSET_NAME"
+
+printf "${BLUE}==>${NC} Downloading checksum...\n"
+if curl -fsSL "$CHECKSUM_URL" -o "$INSTALL_DIR/$CHECKSUM_NAME"; then
+    printf "${BLUE}==>${NC} Verifying checksum...\n"
+    # Navigate to INSTALL_DIR so shasum can find the file by its relative name
+    cd "$INSTALL_DIR" || exit 1
+    if ! shasum -a 256 -c "$CHECKSUM_NAME"; then
+        printf "${RED}Error:${NC} Checksum verification failed. The downloaded file might be corrupted or compromised.\n"
+        exit 1
+    fi
+    cd - > /dev/null || exit 1
+else
+    printf "${RED}Error:${NC} Could not download checksum file. Cannot verify the integrity of the downloaded package.\n"
+    exit 1
+fi
 
 printf "${BLUE}==>${NC} Unzipping...\n"
 unzip -q -o "$INSTALL_DIR/$ASSET_NAME" -d "$INSTALL_DIR"
