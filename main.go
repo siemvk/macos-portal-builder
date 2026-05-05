@@ -38,7 +38,13 @@ var (
 	steamLibrariesOnce   sync.Once
 )
 
-var libraryPathRegex = regexp.MustCompile(`(?i)"path"\s+"([^"]+)"`)
+var (
+	reBetaKeyPublic      = regexp.MustCompile(`(?i)"betakey"\s+"public"`)
+	reBetaKeySteamLegacy = regexp.MustCompile(`(?i)"betakey"\s+"steam_legacy"`)
+	reBetaKeyBeta        = regexp.MustCompile(`(?i)"betakey"\s+"beta"`)
+	reBetaKeyAny         = regexp.MustCompile(`(?i)"betakey"`)
+	libraryPathRegex     = regexp.MustCompile(`(?i)"path"\s+"([^"]+)"`)
+)
 
 // logging shit
 
@@ -233,19 +239,16 @@ func checkSteamBetaRequirement(gameName string) bool {
 		return false
 	}
 
-	contentStr := strings.ToLower(string(content))
-	hasBetaKey := strings.Contains(contentStr, "betakey")
-	isPublic, _ := regexp.MatchString(`"betakey"\s+"public"`, contentStr)
+	hasBetaKey := reBetaKeyAny.Match(content)
+	isPublic := reBetaKeyPublic.Match(content)
 
 	isValid := false
 
 	switch appId {
 	case "220":
-		isSteamLegacy, _ := regexp.MatchString(`"betakey"\s+"steam_legacy"`, contentStr)
-		isValid = isSteamLegacy
+		isValid = reBetaKeySteamLegacy.Match(content)
 	case "400":
-		isBeta, _ := regexp.MatchString(`"betakey"\s+"beta"`, contentStr)
-		isValid = isBeta
+		isValid = reBetaKeyBeta.Match(content)
 	default:
 		isValid = (hasBetaKey && !isPublic)
 	}
