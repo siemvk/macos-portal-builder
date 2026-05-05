@@ -126,6 +126,7 @@ func findSteamLibraries() []string {
 		for _, match := range matches {
 			if len(match) == 2 {
 				path := match[1]
+				path = filepath.Clean(path)
 				if !seen[path] {
 					seen[path] = true
 					libraries = append(libraries, path)
