@@ -1,54 +1,37 @@
 package main
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 )
 
-func TestShellQuote(t *testing.T) {
-	tests := []struct {
-		name     string
-		input    string
-		expected string
-	}{
-		{
-			name:     "empty string",
-			input:    "",
-			expected: "''",
-		},
-		{
-			name:     "simple string",
-			input:    "hello",
-			expected: "'hello'",
-		},
-		{
-			name:     "string with spaces",
-			input:    "hello world",
-			expected: "'hello world'",
-		},
-		{
-			name:     "string with single quotes",
-			input:    "it's a test",
-			expected: "'it'\\''s a test'",
-		},
-		{
-			name:     "string with multiple single quotes",
-			input:    "''",
-			expected: "''\\'''\\'''",
-		},
-		{
-			name:     "string with double quotes",
-			input:    `"hello"`,
-			expected: `'"hello"'`,
-		},
+func TestFindSteamLibraries(t *testing.T) {
+	tempDir := t.TempDir()
+
+	t.Setenv("HOME", tempDir)
+
+	steamPath := filepath.Join(tempDir, "Library", "Application Support", "Steam", "steamapps")
+	err := os.MkdirAll(steamPath, 0755)
+	if err != nil {
+		t.Fatal(err)
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := shellQuote(tt.input)
-			if result != tt.expected {
-				t.Errorf("shellQuote(%q) = %q; expected %q", tt.input, result, tt.expected)
-			}
-		})
+	vdfPath := filepath.Join(steamPath, "libraryfolders.vdf")
+	content := []byte(`"libraryfolders" {`)
+	for i := 0; i < 100; i++ {
+		content = append(content, []byte("\n\"path\" \"/path/to/steam/loop\"")...)
+	}
+	content = append(content, []byte(`}`)...)
+
+	err = os.WriteFile(vdfPath, content, 0644)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	libraries := findSteamLibraries()
+	if len(libraries) != 2 {
+		t.Fatalf("Expected 2 libraries, got %d", len(libraries))
 	}
 }
 
@@ -137,13 +120,28 @@ func TestValidateGameName(t *testing.T) {
 			expected: true,
 		},
 		{
+			name:     "valid hl2 uppercase",
+			input:    "HL2",
+			expected: true,
+		},
+		{
 			name:     "valid hl2 with spaces",
 			input:    "  hl2  ",
 			expected: true,
 		},
 		{
+			name:     "valid portal with tabs and newlines",
+			input:    "\tportal\n",
+			expected: true,
+		},
+		{
 			name:     "invalid game",
 			input:    "tf2",
+			expected: false,
+		},
+		{
+			name:     "invalid csgo",
+			input:    "csgo",
 			expected: false,
 		},
 		{

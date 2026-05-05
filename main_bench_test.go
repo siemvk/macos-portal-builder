@@ -9,4 +9,3 @@ func BenchmarkFindSteamLibraries(b *testing.B) {
 		findSteamLibraries()
 	}
 }
-}
