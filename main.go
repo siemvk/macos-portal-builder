@@ -118,7 +118,7 @@ func findSteamLibraries() []string {
 		re := regexp.MustCompile(`(?i)"path"\s+"([^"]+)"`)
 		matches := re.FindAllStringSubmatch(string(content), -1)
 
-		seen := make(map[string]bool)
+		seen := make(map[string]bool, len(matches)+len(libraries))
 		for _, l := range libraries {
 			seen[l] = true
 		}
