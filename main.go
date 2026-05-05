@@ -38,7 +38,6 @@ var (
 	steamLibrariesOnce   sync.Once
 )
 
-<<<<<<< perf-regex-optimization-16873390987735245567
 var (
 	reBetaKeyPublic      = regexp.MustCompile(`(?i)"betakey"\s+"public"`)
 	reBetaKeySteamLegacy = regexp.MustCompile(`(?i)"betakey"\s+"steam_legacy"`)
@@ -46,9 +45,6 @@ var (
 	reBetaKeyAny         = regexp.MustCompile(`(?i)"betakey"`)
 	libraryPathRegex     = regexp.MustCompile(`(?i)"path"\s+"([^"]+)"`)
 )
-=======
-var libraryPathRegex = regexp.MustCompile(`(?i)"path"\s+"([^"]+)"`)
->>>>>>> main
 
 // logging shit
 
