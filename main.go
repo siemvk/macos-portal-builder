@@ -32,6 +32,8 @@ var Config = ConfigType{
 	repoUrl:     "https://github.com/nillerusr/source-engine",
 }
 
+var libraryPathRegex = regexp.MustCompile(`(?i)"path"\s+"([^"]+)"`)
+
 // logging shit
 
 type loggerType struct {
@@ -113,8 +115,7 @@ func findSteamLibraries() []string {
 	vdfPath := filepath.Join(defaultSteamPath, "steamapps", "libraryfolders.vdf")
 	content, err := os.ReadFile(vdfPath)
 	if err == nil {
-		re := regexp.MustCompile(`(?i)"path"\s+"([^"]+)"`)
-		matches := re.FindAllStringSubmatch(string(content), -1)
+		matches := libraryPathRegex.FindAllStringSubmatch(string(content), -1)
 
 		seen := make(map[string]bool, len(matches)+len(libraries))
 		for _, l := range libraries {
