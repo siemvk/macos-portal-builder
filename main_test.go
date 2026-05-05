@@ -9,11 +9,7 @@ import (
 func TestFindSteamLibraries(t *testing.T) {
 	tempDir := t.TempDir()
 
-	// Save old HOME and restore it later
-	oldHome := os.Getenv("HOME")
-	defer os.Setenv("HOME", oldHome)
-
-	os.Setenv("HOME", tempDir)
+	t.Setenv("HOME", tempDir)
 
 	steamPath := filepath.Join(tempDir, "Library", "Application Support", "Steam", "steamapps")
 	err := os.MkdirAll(steamPath, 0755)
