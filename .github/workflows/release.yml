@@ -8,20 +8,21 @@ on:
         required: true
         type: string
 
-permissions:
-  contents: write
-
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  build-and-release:
+  test:
+    permissions:
+      contents: read
     runs-on: macos-14
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -30,6 +31,23 @@ jobs:
 
       - name: Run tests
         run: go test ./...
+
+  build-and-release:
+    needs: test
+    permissions:
+      contents: write
+    runs-on: macos-14
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.x'
 
       - name: Build
         run: bash -euo pipefail build.sh
