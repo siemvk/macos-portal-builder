@@ -33,16 +33,19 @@ jobs:
         run: go test ./...
 
   build-and-release:
+    if: github.ref == 'refs/heads/main'
     needs: test
     permissions:
       contents: write
     runs-on: macos-14
+    environment: release
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           persist-credentials: false
+          ref: ${{ github.sha }}
 
       - name: Set up Go
         uses: actions/setup-go@v5
