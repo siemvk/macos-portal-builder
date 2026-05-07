@@ -17,11 +17,15 @@ concurrency:
 
 jobs:
   build-and-release:
+    if: github.ref == 'refs/heads/main'
     runs-on: macos-14
+    environment: release
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: refs/heads/main
 
       - name: Set up Go
         uses: actions/setup-go@v5
