@@ -39,12 +39,25 @@ lipo -info dist/Source-game-builder-tool-macos.app/Contents/MacOS/source-game-bu
 # Create release archive
 ZIP="Source-game-builder-tool-macos.zip"
 rm -f "$ZIP"
+
 ditto -c -k --sequesterRsrc --keepParent \
     dist/Source-game-builder-tool-macos.app \
     "$ZIP"
 
-# Create GitHub release and upload asset
-gh release create "$VERSION" "$ZIP" \
+# -----------------------------
+# CREATE CHECKSUM
+# -----------------------------
+SHA_FILE="${ZIP}.sha256"
+shasum -a 256 "$ZIP" | awk '{print $1}' > "$SHA_FILE"
+
+echo "Checksum created: $SHA_FILE"
+
+# -----------------------------
+# CREATE GITHUB RELEASE
+# -----------------------------
+gh release create "$VERSION" \
+    "$ZIP" \
+    "$SHA_FILE" \
     --title "$VERSION" \
     --generate-notes
 
