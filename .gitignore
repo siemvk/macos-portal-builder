@@ -21,3 +21,4 @@ demo-*.mov
 macos-source-builder
 
 *.zip
+**.sha256
