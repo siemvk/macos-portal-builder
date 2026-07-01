@@ -19,3 +19,5 @@ main
 # local demo assets
 demo-*.mov
 macos-source-builder
+
+*.zip

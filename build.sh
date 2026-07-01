@@ -1,4 +1,13 @@
 #!/bin/bash
+set -e
+
+VERSION="$1"
+
+if [ -z "$VERSION" ]; then
+    echo "Usage: $0 <version>"
+    echo "Example: $0 v1.2.0"
+    exit 1
+fi
 
 # Build for Intel (amd64)
 GOOS=darwin GOARCH=amd64 go build -o myapp_intel
@@ -26,3 +35,17 @@ chmod +x dist/Source-game-builder-tool-macos.app/Contents/MacOS/source-game-buil
 
 # Verify architectures
 lipo -info dist/Source-game-builder-tool-macos.app/Contents/MacOS/source-game-builder-tool
+
+# Create release archive
+ZIP="Source-game-builder-tool-macos-${VERSION}.zip"
+rm -f "$ZIP"
+ditto -c -k --sequesterRsrc --keepParent \
+    dist/Source-game-builder-tool-macos.app \
+    "$ZIP"
+
+# Create GitHub release and upload asset
+gh release create "$VERSION" "$ZIP" \
+    --title "$VERSION" \
+    --generate-notes
+
+echo "Release $VERSION created successfully!"
