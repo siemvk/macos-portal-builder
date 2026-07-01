@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sync"
 )
 
 type ConfigType struct {
@@ -32,7 +33,18 @@ var Config = ConfigType{
 	repoUrl:     "https://github.com/nillerusr/source-engine",
 }
 
-var ARE_WE_BUILDING_TO_A_APP = true
+var (
+	cachedSteamLibraries []string
+	steamLibrariesOnce   sync.Once
+)
+
+var (
+	reBetaKeyPublic      = regexp.MustCompile(`(?i)"betakey"\s+"public"`)
+	reBetaKeySteamLegacy = regexp.MustCompile(`(?i)"betakey"\s+"steam_legacy"`)
+	reBetaKeyBeta        = regexp.MustCompile(`(?i)"betakey"\s+"beta"`)
+	reBetaKeyAny         = regexp.MustCompile(`(?i)"betakey"`)
+	libraryPathRegex     = regexp.MustCompile(`(?i)"path"\s+"([^"]+)"`)
+)
 
 // logging shit
 
@@ -75,13 +87,13 @@ var logger = loggerType{
 }
 
 // returnt of het gelukt is
-func execSafe(command string) bool {
-	logger.debugMsg("Running command " + command)
-	var cmd *exec.Cmd
-	if !Config.showCommandOutput {
-		cmd = exec.Command("bash", "-c", command+">&/dev/null")
-	} else {
-		cmd = exec.Command("bash", "-c", command)
+func execSafe(args ...string) bool {
+	logger.debugMsg("Running command " + strings.Join(args, " "))
+	if len(args) == 0 {
+		return false
+	}
+	cmd := exec.Command(args[0], args[1:]...)
+	if Config.showCommandOutput {
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 	}
@@ -89,8 +101,22 @@ func execSafe(command string) bool {
 	return err == nil
 }
 
-func shellQuote(input string) string {
-	return "'" + strings.ReplaceAll(input, "'", "'\\''") + "'"
+func execSafeDirEnv(dir string, env []string, args ...string) bool {
+	logger.debugMsg("Running command in " + dir + " with env " + strings.Join(env, " ") + ": " + strings.Join(args, " "))
+	if len(args) == 0 {
+		return false
+	}
+	cmd := exec.Command(args[0], args[1:]...)
+	cmd.Dir = dir
+	if len(env) > 0 {
+		cmd.Env = append(os.Environ(), env...)
+	}
+	if Config.showCommandOutput {
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+	}
+	err := cmd.Run()
+	return err == nil
 }
 
 func cleanupTempRepo() {
@@ -108,32 +134,38 @@ func cleanupTempRepo() {
 }
 
 func findSteamLibraries() []string {
-	homeDir := os.ExpandEnv("$HOME")
-	defaultSteamPath := filepath.Join(homeDir, "Library", "Application Support", "Steam")
-	libraries := []string{defaultSteamPath}
+	steamLibrariesOnce.Do(func() {
+		homeDir := os.ExpandEnv("$HOME")
+		defaultSteamPath := filepath.Join(homeDir, "Library", "Application Support", "Steam")
+		libraries := []string{defaultSteamPath}
 
-	vdfPath := filepath.Join(defaultSteamPath, "steamapps", "libraryfolders.vdf")
-	content, err := os.ReadFile(vdfPath)
-	if err == nil {
-		re := regexp.MustCompile(`(?i)"path"\s+"([^"]+)"`)
-		matches := re.FindAllStringSubmatch(string(content), -1)
-		for _, match := range matches {
-			if len(match) == 2 {
-				path := match[1]
-				found := false
-				for _, l := range libraries {
-					if l == path {
-						found = true
-						break
+		vdfPath := filepath.Join(defaultSteamPath, "steamapps", "libraryfolders.vdf")
+		content, err := os.ReadFile(vdfPath)
+		if err == nil {
+			matches := libraryPathRegex.FindAllStringSubmatch(string(content), -1)
+
+			seen := make(map[string]bool, len(matches)+len(libraries))
+			for _, l := range libraries {
+				seen[l] = true
+			}
+
+			for _, match := range matches {
+				if len(match) == 2 {
+					path := match[1]
+					path = filepath.Clean(path)
+					if !seen[path] {
+						seen[path] = true
+						libraries = append(libraries, path)
 					}
-				}
-				if !found {
-					libraries = append(libraries, path)
 				}
 			}
 		}
-	}
-	return libraries
+		cachedSteamLibraries = libraries
+	})
+
+	result := make([]string, len(cachedSteamLibraries))
+	copy(result, cachedSteamLibraries)
+	return result
 }
 
 func getGameLibraryPath(appId string) string {
@@ -207,19 +239,16 @@ func checkSteamBetaRequirement(gameName string) bool {
 		return false
 	}
 
-	contentStr := strings.ToLower(string(content))
-	hasBetaKey := strings.Contains(contentStr, "betakey")
-	isPublic, _ := regexp.MatchString(`"betakey"\s+"public"`, contentStr)
+	hasBetaKey := reBetaKeyAny.Match(content)
+	isPublic := reBetaKeyPublic.Match(content)
 
 	isValid := false
 
 	switch appId {
 	case "220":
-		isSteamLegacy, _ := regexp.MatchString(`"betakey"\s+"steam_legacy"`, contentStr)
-		isValid = isSteamLegacy
+		isValid = reBetaKeySteamLegacy.Match(content)
 	case "400":
-		isBeta, _ := regexp.MatchString(`"betakey"\s+"beta"`, contentStr)
-		isValid = isBeta
+		isValid = reBetaKeyBeta.Match(content)
 	default:
 		isValid = (hasBetaKey && !isPublic)
 	}
@@ -244,13 +273,9 @@ func checkSteamBetaRequirement(gameName string) bool {
 	return true
 }
 
-func build() bool {
-	logger.debugMsg("Starting build process for game: " + Config.GameToBuild)
-	if _, err := os.Stat(Config.tempRepoDir); !os.IsNotExist(err) {
-		logger.infoMsg("Cleaning up old temporary repository directory before cloning...")
-		os.RemoveAll(Config.tempRepoDir)
-	}
 
+
+func checkXcode() bool {
 	logger.infoMsg("Checking system requirements...")
 	xcodeOut, err := exec.Command("xcode-select", "-p").Output()
 	hasXcode := false
@@ -270,7 +295,10 @@ func build() bool {
 		logger.errorMsg("A window will pop up. Follow the prompts to install, wait for it to finish completely, and then run this builder tool again.")
 		return false
 	}
+	return true
+}
 
+func checkHomebrew() bool {
 	brewPath, err := exec.LookPath("brew")
 	if err != nil {
 		// fallback for if users just installed it but haven't restarted their terminal
@@ -292,33 +320,42 @@ func build() bool {
 		// brew found via fallbacks o inject it into PATH for the session (why did they not restart the terminal grrr)
 		os.Setenv("PATH", filepath.Dir(brewPath)+":"+os.Getenv("PATH"))
 	}
+	return true
+}
 
+func installDependencies() bool {
 	logger.infoMsg("Installing dependencies...")
 	logger.debugMsg("Using Homebrew to install dependencies. This may take a while...")
-	if !execSafe("brew install python sdl2 python3 freetype2 fontconfig pkg-config opus jpeg jpeg-turbo libpng libedit") {
+	if !execSafe("brew", "install", "python", "sdl2", "python3", "freetype2", "fontconfig", "pkg-config", "opus", "jpeg", "jpeg-turbo", "libpng", "libedit") {
 		logger.warnMsg("Dependencies installation warning. If the build fails later, this might be why.")
 	}
 	logger.successMsg("Done installing dependencies!")
+	return true
+}
 
+func cloneRepository() bool {
 	logger.infoMsg("Cloning the repo....")
-	if !execSafe("git clone --recursive " + Config.repoUrl + " " + Config.tempRepoDir) {
+	if !execSafe("git", "clone", "--recursive", Config.repoUrl, Config.tempRepoDir) {
 		logger.errorMsg("Failed to clone the repository! Please check your internet connection or git permissions.")
 		return false
 	}
 	logger.successMsg("Done cloning repo")
+	return true
+}
 
+func configureBuild() bool {
 	logger.infoMsg("Configuring build script...")
 
-	try1 := execSafe("cd " + Config.tempRepoDir + " && export CXXFLAGS=\"-include alloca.h\" && python3 waf configure -T release --prefix='' --build-games=" + Config.GameToBuild)
+	try1 := execSafeDirEnv(Config.tempRepoDir, []string{"CXXFLAGS=-include alloca.h"}, "python3", "waf", "configure", "-T", "release", "--prefix=", "--build-games="+Config.GameToBuild)
 	if !try1 {
 		logger.errorMsg("Basic install failed! This is not uncommon, trying again with different clang")
-		try2 := execSafe("cd " + Config.tempRepoDir + " && export CC=/usr/bin/clang && export CXX=/usr/bin/clang++ && export CXXFLAGS=\"-include alloca.h\" && python3 waf configure -T release --prefix='' --build-games=" + Config.GameToBuild)
+		try2 := execSafeDirEnv(Config.tempRepoDir, []string{"CC=/usr/bin/clang", "CXX=/usr/bin/clang++", "CXXFLAGS=-include alloca.h"}, "python3", "waf", "configure", "-T", "release", "--prefix=", "--build-games="+Config.GameToBuild)
 		if !try2 {
 			logger.errorMsg("Install failed again! I do not experience this on my machine, so I am doing random fixes from reddit now.")
-			try3 := execSafe("cd " + Config.tempRepoDir + " && export CC=/usr/bin/clang && export CXX=/usr/bin/clang++ && export CXXFLAGS=\"-include alloca.h\" && arch -arm64 python3 waf configure -T release --prefix='' --build-games=" + Config.GameToBuild)
+			try3 := execSafeDirEnv(Config.tempRepoDir, []string{"CC=/usr/bin/clang", "CXX=/usr/bin/clang++", "CXXFLAGS=-include alloca.h"}, "arch", "-arm64", "python3", "waf", "configure", "-T", "release", "--prefix=", "--build-games="+Config.GameToBuild)
 			if !try3 {
 				logger.errorMsg("Install failed again!!!! Okay so what if the first fix broke the second fix so lets try the second fix without the first fix.")
-				try4 := execSafe("cd " + Config.tempRepoDir + " && export CXXFLAGS=\"-include alloca.h\" && arch -arm64 python3 waf configure -T release --prefix='' --build-games=" + Config.GameToBuild)
+				try4 := execSafeDirEnv(Config.tempRepoDir, []string{"CXXFLAGS=-include alloca.h"}, "arch", "-arm64", "python3", "waf", "configure", "-T", "release", "--prefix=", "--build-games="+Config.GameToBuild)
 				if !try4 {
 					logger.errorMsg("Install failed again!!!!! I give up. Please open an issue with the log output and device specs so I can try to fix this.")
 					cleanupTempRepo()
@@ -329,10 +366,13 @@ func build() bool {
 		}
 	}
 	logger.successMsg("Done configuring build script!")
+	return true
+}
 
+func buildGame() bool {
 	logger.infoMsg("Building the game.... this may take a while...")
 	if !Config.skipBuild {
-		if !execSafe("cd " + Config.tempRepoDir + " && python3 waf build") {
+		if !execSafeDirEnv(Config.tempRepoDir, nil, "python3", "waf", "build") {
 			logger.errorMsg("Failed to build the game! Please run with --log-level 3 to see the compile errors.")
 			cleanupTempRepo()
 			return false
@@ -341,16 +381,22 @@ func build() bool {
 	} else {
 		logger.warnMsg("Skipping build process!")
 	}
+	return true
+}
 
+func installGameToTemp() bool {
 	logger.infoMsg("Installing the game to a temp directory...")
-	if !execSafe("cd " + Config.tempRepoDir + " && python3 waf install --destdir=" + shellQuote(Config.tempRepoDir+"/installingthismf")) {
+	if !execSafeDirEnv(Config.tempRepoDir, nil, "python3", "waf", "install", "--destdir="+Config.tempRepoDir+"/installingthismf") {
 		logger.errorMsg("Failed to install build artifacts to temporary directory")
 		cleanupTempRepo()
 		return false
 	}
 
 	logger.successMsg("Done installing the game!")
+	return true
+}
 
+func copyFilesToGameFolder() bool {
 	if Config.dryRun {
 		logger.warnMsg("Dry run enabled, skipping installation to game folder.")
 		cleanupTempRepo()
@@ -366,15 +412,25 @@ func build() bool {
 
 	logger.infoMsg("Copying files to the game folder...")
 	logger.debugMsg("Copying files from " + Config.tempRepoDir + "/installingthismf to " + gameDir)
-	copyCmd := "cd " + shellQuote(gameDir) +
-		" && rm -rf ./" + Config.GameToBuild + "/bin ./bin" +
-		" && cp -r " + shellQuote(Config.tempRepoDir+"/installingthismf/"+Config.GameToBuild+"/bin") + " ./" + Config.GameToBuild + "/bin" +
-		" && cp -r " + shellQuote(Config.tempRepoDir+"/installingthismf/bin") + " ./bin" +
-		" && (mv ./hl2_osx ./hl2_osx_backup || true)" +
-		" && mv " + shellQuote(Config.tempRepoDir+"/installingthismf/hl2_launcher") + " ./hl2_osx"
 
-	if !execSafe(copyCmd) {
-		logger.errorMsg("Failed while copying files into game directory")
+	if !execSafeDirEnv(gameDir, nil, "rm", "-rf", "./"+Config.GameToBuild+"/bin", "./bin") {
+		logger.errorMsg("Failed while cleaning game directory")
+		cleanupTempRepo()
+		return false
+	}
+	if !execSafeDirEnv(gameDir, nil, "cp", "-r", Config.tempRepoDir+"/installingthismf/"+Config.GameToBuild+"/bin", "./"+Config.GameToBuild+"/bin") {
+		logger.errorMsg("Failed while copying game bin into game directory")
+		cleanupTempRepo()
+		return false
+	}
+	if !execSafeDirEnv(gameDir, nil, "cp", "-r", Config.tempRepoDir+"/installingthismf/bin", "./bin") {
+		logger.errorMsg("Failed while copying bin into game directory")
+		cleanupTempRepo()
+		return false
+	}
+	execSafeDirEnv(gameDir, nil, "mv", "./hl2_osx", "./hl2_osx_backup") // Ignore failure
+	if !execSafeDirEnv(gameDir, nil, "mv", Config.tempRepoDir+"/installingthismf/hl2_launcher", "./hl2_osx") {
+		logger.errorMsg("Failed while copying hl2_launcher into game directory")
 		cleanupTempRepo()
 		return false
 	}
@@ -382,6 +438,19 @@ func build() bool {
 	logger.successMsg("Done copying files to the game folder!")
 	cleanupTempRepo()
 	return true
+}
+
+func build() bool {
+	logger.debugMsg("Starting build process for game: " + Config.GameToBuild)
+	defer cleanupTempRepo()
+	return checkXcode() &&
+		checkHomebrew() &&
+		installDependencies() &&
+		cloneRepository() &&
+		configureBuild() &&
+		buildGame() &&
+		installGameToTemp() &&
+		copyFilesToGameFolder()
 }
 
 func main() {
@@ -401,7 +470,6 @@ func main() {
 	Config.skipCleanup = *skipCleanupInput
 	Config.skipBuild = *skipBuildInput
 	Config.GameToBuild = normalizeGameName(*gameBuildInput)
-	Config.tempRepoDir = *tempRepoDirInput
 	Config.showCommandOutput = logLevel >= 3
 
 	if Config.GameToBuild == "" {
@@ -434,6 +502,18 @@ func main() {
 	if !checkSteamBetaRequirement(Config.GameToBuild) {
 		os.Exit(1)
 	}
+
+	if err := os.MkdirAll(*tempRepoDirInput, 0755); err != nil {
+		logger.errorMsg("Failed to create temporary repository base directory: " + err.Error())
+		os.Exit(1)
+	}
+
+	tempDir, err := os.MkdirTemp(*tempRepoDirInput, "source-engine-*")
+	if err != nil {
+		logger.errorMsg("Failed to create secure temporary repository directory: " + err.Error())
+		os.Exit(1)
+	}
+	Config.tempRepoDir = tempDir
 
 	success := build()
 
