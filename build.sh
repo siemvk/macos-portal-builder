@@ -48,7 +48,7 @@ ditto -c -k --sequesterRsrc --keepParent \
 # CREATE CHECKSUM
 # -----------------------------
 SHA_FILE="${ZIP}.sha256"
-shasum -a 256 "$ZIP" | awk '{print $1}' > "$SHA_FILE"
+shasum -a 256 "$ZIP" > "$SHA_FILE"
 
 echo "Checksum created: $SHA_FILE"
 
