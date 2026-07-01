@@ -37,7 +37,7 @@ chmod +x dist/Source-game-builder-tool-macos.app/Contents/MacOS/source-game-buil
 lipo -info dist/Source-game-builder-tool-macos.app/Contents/MacOS/source-game-builder-tool
 
 # Create release archive
-ZIP="Source-game-builder-tool-macos-${VERSION}.zip"
+ZIP="Source-game-builder-tool-macos.zip"
 rm -f "$ZIP"
 ditto -c -k --sequesterRsrc --keepParent \
     dist/Source-game-builder-tool-macos.app \
